@@ -1,3 +1,4 @@
+
 namespace Ricoh6502.Commands
 {
     public abstract class BranchCommand : Command
@@ -8,6 +9,17 @@ namespace Ricoh6502.Commands
         {
             D1 = d1;
         }
+
+        protected override void ExecuteInternal(Processor processor)
+        {
+            if (CheckCondition(processor.Status))
+            {
+                BranchTaken = true;
+                processor.PC = (ushort)(processor.PC + (sbyte)processor.GetValue(AddressingMode, D1, 0));
+            }
+        }
+
+        protected abstract bool CheckCondition(Status status);
 
         protected override byte GetInstructionCycleCount()
         {
