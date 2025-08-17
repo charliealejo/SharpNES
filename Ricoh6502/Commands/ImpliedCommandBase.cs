@@ -1,8 +1,8 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class TBase : Command
+    public abstract class ImpliedCommandBase : Command
     {
-        public TBase() : base(AddressingMode.Implied) { }
+        public ImpliedCommandBase() : base(AddressingMode.Implied) { }
 
         protected override byte GetInstructionCycleCount()
         {

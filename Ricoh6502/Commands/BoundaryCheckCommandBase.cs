@@ -22,7 +22,7 @@ namespace Ricoh6502.Commands
                 AddressingMode.AbsoluteY => 4,
                 AddressingMode.IndirectX => 6,
                 AddressingMode.IndirectY => 5,
-                _ => throw new ArgumentOutOfRangeException(nameof(AddressingMode), AddressingMode, null),
+                _ => throw new ArgumentOutOfRangeException(nameof(AddressingMode), AddressingMode, null)
             };
         }
 
@@ -39,7 +39,7 @@ namespace Ricoh6502.Commands
                 AddressingMode.AbsoluteY => (ushort)(processor.PC + 3),
                 AddressingMode.IndirectX => (ushort)(processor.PC + 2),
                 AddressingMode.IndirectY => (ushort)(processor.PC + 2),
-                _ => throw new ArgumentOutOfRangeException(nameof(AddressingMode), AddressingMode, null),
+                _ => throw new ArgumentOutOfRangeException(nameof(AddressingMode), AddressingMode, null)
             };
         }
 
