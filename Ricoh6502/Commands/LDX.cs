@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public class LDX : LDA
+    public class LDX : BoundaryCheckCommandBase
     {
         public LDX(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2)
         {

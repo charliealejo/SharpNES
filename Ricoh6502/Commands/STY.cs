@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public class STY : STA
+    public class STY : STBase
     {
         public STY(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2)
         {

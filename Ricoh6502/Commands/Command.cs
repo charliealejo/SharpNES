@@ -20,6 +20,7 @@ namespace Ricoh6502.Commands
             {
                 cycles += 1;
             }
+            processor.PC = nextInstructionAddress;
             return cycles;
         }
 

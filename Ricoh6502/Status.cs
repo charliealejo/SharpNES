@@ -1,4 +1,5 @@
-﻿namespace Ricoh6502
+﻿
+namespace Ricoh6502
 {
     /// <summary>
     /// Status Register
@@ -85,10 +86,34 @@
         /// </remarks>
         public bool NegativeFlag { get; set; }
 
+        /// <summary>
+        /// Sets the Zero and Negative flags based on the given value.
+        /// </summary>
+        /// <remarks>
+        /// Sets the zero flag when the value is zero.
+        /// Sets the negative flag when the value is negative (the most significant bit is set).
+        /// </remarks>
+        /// <param name="value">The value to check.</param>
         public void SetZeroAndNegativeFlags(byte value)
         {
             ZeroFlag = value == 0;
             NegativeFlag = (value & 0x80) != 0;
+        }
+
+        /// <summary>
+        /// Sets the Carry and Overflow flags based on the given values.
+        /// </summary>
+        /// <remarks>
+        /// Sets the carry flag when the result is greater than 0xFF.
+        /// Sets the overflow flag based on the given accumulator and memory values.
+        /// </remarks>
+        /// <param name="result">The result of the current operation.</param>
+        /// <param name="acc">The accumulator value before the operation.</param>
+        /// <param name="memory">The memory value.</param>
+        public void SetCarryAndOverflowFlags(int result, byte acc, byte memory)
+        {
+            CarryFlag = result > 0xFF || result < 0;
+            OverflowFlag = ((acc ^ (byte)result) & (acc ^ memory) & 0x80) != 0;
         }
     }
 }
