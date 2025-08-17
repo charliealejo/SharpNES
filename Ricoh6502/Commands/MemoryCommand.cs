@@ -1,8 +1,8 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class MemoryCommandBase : Command
+    public abstract class MemoryCommand : Command
     {
-        protected MemoryCommandBase(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode)
+        protected MemoryCommand(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode)
         {
             AddressingMode = addressingMode;
             D1 = d1;

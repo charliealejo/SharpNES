@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class INC : MemoryCommandBase
+    public abstract class INC : MemoryCommand
     {
         public INC(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 

@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class CMP : BoundaryCheckCommandBase
+    public abstract class CMP : BoundaryCheckCommand
     {
         public CMP(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 

@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public class LDY : BoundaryCheckCommandBase
+    public class LDY : BoundaryCheckCommand
     {
         public LDY(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2)
         {

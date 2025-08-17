@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class ASL : MemoryCommandBase
+    public abstract class ASL : MemoryCommand
     {
         public ASL(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 

@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public class STX : STBase
+    public class STX : StoreCommand
     {
         public STX(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2)
         {

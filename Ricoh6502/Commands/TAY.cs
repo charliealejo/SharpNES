@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class TAY : ImpliedCommandBase
+    public abstract class TAY : ImpliedCommand
     {
         public TAY() : base() { }
 

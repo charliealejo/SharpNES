@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class LSR : MemoryCommandBase
+    public abstract class LSR : MemoryCommand
     {
         public LSR(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 

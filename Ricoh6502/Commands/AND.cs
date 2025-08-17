@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class AND : BoundaryCheckCommandBase
+    public abstract class AND : BoundaryCheckCommand
     {
         public AND(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 

@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class INY : ImpliedCommandBase
+    public abstract class INY : ImpliedCommand
     {
         public INY() : base() { }
 

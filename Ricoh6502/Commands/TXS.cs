@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class TXS : ImpliedCommandBase
+    public abstract class TXS : ImpliedCommand
     {
         public TXS() : base() { }
 

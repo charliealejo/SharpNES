@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class DEX : ImpliedCommandBase
+    public abstract class DEX : ImpliedCommand
     {
         public DEX() : base() { }
 

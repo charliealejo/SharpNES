@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class TYA : ImpliedCommandBase
+    public abstract class TYA : ImpliedCommand
     {
         public TYA() : base() { }
 

@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public class SBC : BoundaryCheckCommandBase
+    public class SBC : BoundaryCheckCommand
     {
         public SBC(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 
