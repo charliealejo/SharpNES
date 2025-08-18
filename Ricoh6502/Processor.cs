@@ -5,15 +5,21 @@ namespace Ricoh6502
 {
     public class Processor
     {
-        private double _cpuFrequency;
+        private readonly bool _debug;
+
+        private StreamWriter? _logWriter;
 
         private double _cpuCycleTimeInNanoSeconds;
+
+        private double _cpuFrequency;
 
         private bool _interrupt;
 
         private bool _nonMaskableInterrupt;
 
-        public Processor(SystemVersion version)
+        private uint _cycles;
+
+        public Processor(SystemVersion version, bool debug = false)
         {
             _cpuFrequency = version switch
             {
@@ -23,6 +29,16 @@ namespace Ricoh6502
                 _ => throw new ArgumentOutOfRangeException(nameof(version), version, null)
             };
             _cpuCycleTimeInNanoSeconds = 1e9 / _cpuFrequency;
+
+            _debug = debug;
+            if (_debug)
+            {
+                var logDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
+                if (!System.IO.Directory.Exists(logDir))
+                    System.IO.Directory.CreateDirectory(logDir);
+                var logPath = System.IO.Path.Combine(logDir, $"cpu_{DateTime.Now:yyyyMMdd_HHmmss}.log");
+                _logWriter = new System.IO.StreamWriter(logPath, false) { AutoFlush = true };
+            }
 
             _interrupt = false;
             _nonMaskableInterrupt = false;
@@ -67,6 +83,7 @@ namespace Ricoh6502
         {
             SetPCWithInterruptVector(0xFFFC);
 
+            _cycles = 7;
             var clock = new Stopwatch();
             var spinWait = new SpinWait();
             while (true)
@@ -93,6 +110,16 @@ namespace Ricoh6502
                     command = CommandFactory.CreateCommand(opcode, d1, d2);
                 }
 
+                // Debug logging before execution
+                if (_debug && _logWriter != null)
+                {
+                    string instrName = command.GetType().Name;
+                    string b1 = instrName.Length > 0 ? $"{d1:X2}" : "  ";
+                    string b2 = instrName.Length > 0 ? $"{d2:X2}" : "  ";
+                    string logLine = $"{PC:X4}  {opcode:X2} {b1} {b2}  {instrName,-16}  A:{Acc:X2} X:{X:X2} Y:{Y:X2} SP:{SP:X2} CYC:{_cycles}";
+                    _logWriter.WriteLine(logLine);
+                }
+
                 // Execute the instruction
                 var cycles = command.Execute(this);
 
@@ -111,7 +138,24 @@ namespace Ricoh6502
                 {
                     spinWait.SpinOnce();
                 } while (clock.Elapsed.TotalNanoseconds < cycles * _cpuCycleTimeInNanoSeconds);
+
+                _cycles += cycles;
             }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing && _logWriter != null)
+            {
+                _logWriter.Dispose();
+                _logWriter = null;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         public void IRQ()

@@ -7,7 +7,7 @@ namespace CpuTest
     {
         static void Main()
         {
-            Processor cpu = new(SystemVersion.NTSC);
+            Processor cpu = new(SystemVersion.NTSC, true);
             Loader.LoadCartridge("testroms/nestest.nes", cpu.Memory);
             cpu.Run();
         }
