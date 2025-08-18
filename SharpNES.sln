@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ricoh6502", "Ricoh6502\Rico
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cartridge", "Cartridge\Cartridge.csproj", "{66E3119A-595B-4E85-8E84-F2D62CDC79F5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CpuTest", "CpuTest\CpuTest.csproj", "{C3F2204E-853D-4471-9809-8E92A49F48EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +43,18 @@ Global
 		{66E3119A-595B-4E85-8E84-F2D62CDC79F5}.Release|x64.Build.0 = Release|Any CPU
 		{66E3119A-595B-4E85-8E84-F2D62CDC79F5}.Release|x86.ActiveCfg = Release|Any CPU
 		{66E3119A-595B-4E85-8E84-F2D62CDC79F5}.Release|x86.Build.0 = Release|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Debug|x64.Build.0 = Debug|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Debug|x86.Build.0 = Debug|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Release|x64.ActiveCfg = Release|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Release|x64.Build.0 = Release|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Release|x86.ActiveCfg = Release|Any CPU
+		{C3F2204E-853D-4471-9809-8E92A49F48EC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
