@@ -12,27 +12,27 @@ namespace Ricoh6502
         /// <summary>
         /// Gets or sets the program counter (PC), which represents the current execution address in memory.
         /// </summary>
-        public ushort PC { get; set; }
+        public ushort PC { get; set; } = 0xFFFC;
 
         /// <summary>
         /// Gets or sets the stack pointer value.
         /// </summary>
-        public byte SP { get; set; } = 0xFF;
+        public byte SP { get; set; } = 0xFD;
 
         /// <summary>
         /// Gets or sets the accumulated value as an 8-bit unsigned integer.
         /// </summary>
-        public byte Acc { get; set; }
+        public byte Acc { get; set; } = 0;
 
         /// <summary>
         /// Gets or sets the value of the X register as an 8-bit unsigned integer.
         /// </summary>
-        public byte X { get; set; }
+        public byte X { get; set; } = 0;
 
         /// <summary>
         /// Gets or sets the value of the Y register as an 8-bit unsigned integer.
         /// </summary>
-        public byte Y { get; set; }
+        public byte Y { get; set; } = 0;
 
         /// <summary>
         /// Gets the status value represented as a byte.
@@ -108,6 +108,13 @@ namespace Ricoh6502
         {
             SP++;
             return Memory[0x0100 | SP];
+        }
+
+        public void Reset()
+        {
+            PC = 0xFFFC;
+            SP = SP -= 3;
+            Status.InterruptDisable = true;
         }
     }
 }
