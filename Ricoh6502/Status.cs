@@ -1,7 +1,4 @@
-﻿
-
-
-namespace Ricoh6502
+﻿namespace Ricoh6502
 {
     /// <summary>
     /// Status Register

@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class INX : ImpliedCommand
+    public class INX : ImpliedCommand
     {
         public INX() : base() { }
 

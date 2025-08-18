@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class DEC : MemoryCommand
+    public class DEC : MemoryCommand
     {
         public DEC(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 

@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class EOR : BoundaryCheckCommand
+    public class EOR : BoundaryCheckCommand
     {
         public EOR(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 

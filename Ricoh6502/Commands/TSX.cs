@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class TSX : ImpliedCommand
+    public class TSX : ImpliedCommand
     {
         public TSX() : base() { }
 

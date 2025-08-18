@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class ROL : MemoryCommand
+    public class ROL : MemoryCommand
     {
         public ROL(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 

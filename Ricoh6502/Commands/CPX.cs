@@ -1,6 +1,6 @@
 namespace Ricoh6502.Commands
 {
-    public abstract class CPX : BoundaryCheckCommand
+    public class CPX : BoundaryCheckCommand
     {
         public CPX(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 
