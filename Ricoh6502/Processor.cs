@@ -17,7 +17,7 @@ namespace Ricoh6502
         /// <summary>
         /// Gets or sets the stack pointer value.
         /// </summary>
-        public byte SP { get; set; }
+        public byte SP { get; set; } = 0xFF;
 
         /// <summary>
         /// Gets or sets the accumulated value as an 8-bit unsigned integer.
@@ -96,6 +96,18 @@ namespace Ricoh6502
                 default:
                     throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null);
             }
+        }
+
+        public void PushStack(byte v)
+        {
+            Memory[0x0100 | SP] = v;
+            SP--;
+        }
+
+        public byte PopStack()
+        {
+            SP++;
+            return Memory[0x0100 | SP];
         }
     }
 }

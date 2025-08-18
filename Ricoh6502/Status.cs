@@ -1,4 +1,5 @@
 ﻿
+
 namespace Ricoh6502
 {
     /// <summary>
