@@ -1,5 +1,6 @@
 ﻿
 
+
 namespace Ricoh6502
 {
     /// <summary>
@@ -115,6 +116,31 @@ namespace Ricoh6502
         {
             CarryFlag = result > 0xFF || result < 0;
             OverflowFlag = ((acc ^ (byte)result) & (acc ^ memory) & 0x80) != 0;
+        }
+
+        public byte GetStatus()
+        {
+            byte status = 0;
+            status |= (byte)(CarryFlag ? 1 : 0);
+            status |= (byte)(ZeroFlag ? 1 << 1 : 0);
+            status |= (byte)(InterruptDisable ? 1 << 2 : 0);
+            status |= (byte)(DecimalMode ? 1 << 3 : 0);
+            status |= 1 << 4;
+            status |= 1 << 5;
+            status |= (byte)(OverflowFlag ? 1 << 6 : 0);
+            status |= (byte)(NegativeFlag ? 1 << 7 : 0);
+            return status;
+        }
+
+        public void SetStatus(byte status)
+        {
+            CarryFlag = (status & 1) != 0;
+            ZeroFlag = (status & 2) != 0;
+            InterruptDisable = (status & 4) != 0;
+            DecimalMode = (status & 8) != 0;
+            BreakCommand = false;
+            OverflowFlag = (status & 64) != 0;
+            NegativeFlag = (status & 128) != 0;
         }
     }
 }

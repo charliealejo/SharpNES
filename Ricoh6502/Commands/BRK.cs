@@ -12,7 +12,7 @@ namespace Ricoh6502.Commands
             var returnAddress = (ushort)(processor.PC + 2);
             processor.PushStack((byte)(returnAddress >> 8));
             processor.PushStack((byte)returnAddress);
-            processor.PushStack(GetByte(processor.Status));
+            processor.PushStack(processor.Status.GetStatus());
             processor.Status.InterruptDisable = true;
             processor.Status.BreakCommand = true;
             processor.PC = 0xFFFE;
@@ -31,19 +31,6 @@ namespace Ricoh6502.Commands
         protected override bool CheckForPageBoundaryCrossing(ushort currentInstructionAddress, ushort nextInstructionAddress)
         {
             return false;
-        }
-
-        private static byte GetByte(Status status)
-        {
-            byte result = 0;
-            result |= (byte)(status.CarryFlag ? 1 : 0);
-            result |= (byte)(status.ZeroFlag ? 2 : 0);
-            result |= (byte)(status.InterruptDisable ? 4 : 0);
-            result |= (byte)(status.DecimalMode ? 8 : 0);
-            result |= 48;
-            result |= (byte)(status.OverflowFlag ? 64 : 0);
-            result |= (byte)(status.NegativeFlag ? 128 : 0);
-            return result;
         }
     }
 }
