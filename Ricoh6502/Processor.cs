@@ -39,6 +39,20 @@ namespace Ricoh6502
         /// </summary>
         public Status Status { get; } = new Status();
 
+        public void Run()
+        {
+            while (true)
+            {
+                // Fetch the next instruction
+                byte opcode = Memory[PC];
+                byte d1 = Memory[(ushort)(PC + 1)];
+                byte d2 = PC + 2 >= Memory.Length ? (byte)0 : Memory[(ushort)(PC + 2)];
+                // Decode and execute the instruction
+                var command = CommandFactory.CreateCommand(opcode, d1, d2);
+                command.Execute(this);
+            }
+        }
+
         public byte GetValue(AddressingMode addressingMode, byte d1, byte d2)
         {
             return addressingMode switch
