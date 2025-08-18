@@ -36,7 +36,7 @@ namespace Ricoh6502
         /// <summary>
         /// Gets or sets the program counter (PC), which represents the current execution address in memory.
         /// </summary>
-        public ushort PC { get; set; } = 0xFFFC;
+        public ushort PC { get; set; }
 
         /// <summary>
         /// Gets or sets the stack pointer value.
@@ -65,17 +65,20 @@ namespace Ricoh6502
 
         public void Run()
         {
+            SetPCWithInterruptVector(0xFFFC);
+
             var clock = new Stopwatch();
             var spinWait = new SpinWait();
             while (true)
             {
                 clock.Restart();
+
                 // Fetch the next instruction
                 byte opcode = Memory[PC];
                 byte d1 = Memory[(ushort)(PC + 1)];
                 byte d2 = Memory[(ushort)(PC + 2)];
 
-                // Decode the instruction
+                // Create the next instruction checking for interrupts
                 Command command;
                 if (_nonMaskableInterrupt)
                 {
@@ -180,7 +183,7 @@ namespace Ricoh6502
             }
         }
 
-        public void SetPCForInterrupt(ushort irqAddress)
+        public void SetPCWithInterruptVector(ushort irqAddress)
         {
             PC = (ushort)(Memory[irqAddress] | (Memory[irqAddress + 1] << 8));
         }

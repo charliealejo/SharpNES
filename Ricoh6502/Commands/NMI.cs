@@ -14,7 +14,7 @@ namespace Ricoh6502.Commands
             processor.PushStack((byte)returnAddress);
             processor.PushStack(processor.Status.GetStatus());
             processor.Status.InterruptDisable = true;
-            processor.SetPCForInterrupt(0xFFFA);
+            processor.SetPCWithInterruptVector(0xFFFA);
         }
 
         protected override byte GetInstructionCycleCount()
