@@ -1,9 +1,33 @@
-﻿using Ricoh6502.Commands;
+﻿using System.Diagnostics;
+using Ricoh6502.Commands;
 
 namespace Ricoh6502
 {
-    public class Processor()
+    public class Processor
     {
+        private double _cpuFrequency;
+
+        private double _cpuCycleTimeInNanoSeconds;
+
+        private bool _interrupt;
+
+        private bool _nonMaskableInterrupt;
+
+        public Processor(SystemVersion version)
+        {
+            _cpuFrequency = version switch
+            {
+                SystemVersion.NTSC => 1_789_773,
+                SystemVersion.PAL => 1_662_607,
+                SystemVersion.Dendy => 1_773_448,
+                _ => throw new ArgumentOutOfRangeException(nameof(version), version, null)
+            };
+            _cpuCycleTimeInNanoSeconds = 1e9 / _cpuFrequency;
+
+            _interrupt = false;
+            _nonMaskableInterrupt = false;
+        }
+
         /// <summary>
         /// Gets the memory array representing the processor's addressable memory space.
         /// </summary>
@@ -39,14 +63,13 @@ namespace Ricoh6502
         /// </summary>
         public Status Status { get; } = new Status();
 
-        private bool _interrupt = false;
-
-        private bool _nonMaskableInterrupt = false;
-
         public void Run()
         {
+            var clock = new Stopwatch();
+            var spinWait = new SpinWait();
             while (true)
             {
+                clock.Restart();
                 // Fetch the next instruction
                 byte opcode = Memory[PC];
                 byte d1 = Memory[(ushort)(PC + 1)];
@@ -68,7 +91,7 @@ namespace Ricoh6502
                 }
 
                 // Execute the instruction
-                command.Execute(this);
+                var cycles = command.Execute(this);
 
                 // Clear the interrupt flags
                 if (command is IRQ)
@@ -79,6 +102,12 @@ namespace Ricoh6502
                 {
                     _nonMaskableInterrupt = false;
                 }
+
+                // Wait if needed
+                do
+                {
+                    spinWait.SpinOnce();
+                } while (clock.Elapsed.TotalNanoseconds < cycles * _cpuCycleTimeInNanoSeconds);
             }
         }
 
