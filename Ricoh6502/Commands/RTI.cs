@@ -10,7 +10,7 @@ namespace Ricoh6502.Commands
         protected override void ExecuteInternal(Processor processor)
         {
             var statusByte = processor.PopStack();
-            RecoverStatus(processor, statusByte);
+            processor.Status.SetStatus(statusByte);
             var returnAddressLow = processor.PopStack();
             var returnAddressHigh = processor.PopStack();
             processor.PC = (ushort)((returnAddressHigh << 8) | returnAddressLow);
@@ -29,17 +29,6 @@ namespace Ricoh6502.Commands
         protected override bool CheckForPageBoundaryCrossing(ushort currentInstructionAddress, ushort nextInstructionAddress)
         {
             return false;
-        }
-
-        private static void RecoverStatus(Processor processor, byte statusByte)
-        {
-            processor.Status.CarryFlag = (statusByte & 1) != 0;
-            processor.Status.ZeroFlag = (statusByte & 2) != 0;
-            processor.Status.InterruptDisable = (statusByte & 4) != 0;
-            processor.Status.DecimalMode = (statusByte & 8) != 0;
-            processor.Status.BreakCommand = false;
-            processor.Status.OverflowFlag = (statusByte & 64) != 0;
-            processor.Status.NegativeFlag = (statusByte & 128) != 0;
         }
     }
 }

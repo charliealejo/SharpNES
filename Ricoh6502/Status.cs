@@ -122,8 +122,8 @@
             status |= (byte)(ZeroFlag ? 1 << 1 : 0);
             status |= (byte)(InterruptDisable ? 1 << 2 : 0);
             status |= (byte)(DecimalMode ? 1 << 3 : 0);
-            status |= 1 << 4;
-            status |= 1 << 5;
+            status |= (byte)((BreakCommand ? 1 : 0) << 4);
+            status |= (byte)((BreakCommand ? 1 : 0) << 5);
             status |= (byte)(OverflowFlag ? 1 << 6 : 0);
             status |= (byte)(NegativeFlag ? 1 << 7 : 0);
             return status;
