@@ -77,3 +77,6 @@ $RECYCLE.BIN/
 
 # Dotnet tool restore
 .dotnet_tool/
+
+# Roms folder
+[Rr]oms/
