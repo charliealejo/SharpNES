@@ -39,6 +39,10 @@ namespace Ricoh6502
         /// </summary>
         public Status Status { get; } = new Status();
 
+        private bool _interrupt = false;
+
+        private bool _nonMaskableInterrupt = false;
+
         public void Run()
         {
             while (true)
@@ -47,10 +51,45 @@ namespace Ricoh6502
                 byte opcode = Memory[PC];
                 byte d1 = Memory[(ushort)(PC + 1)];
                 byte d2 = Memory[(ushort)(PC + 2)];
-                // Decode and execute the instruction
-                var command = CommandFactory.CreateCommand(opcode, d1, d2);
+
+                // Decode the instruction
+                Command command;
+                if (_nonMaskableInterrupt)
+                {
+                    command = new NMI();
+                }
+                else if (_interrupt && !Status.InterruptDisable)
+                {
+                    command = new IRQ();
+                }
+                else
+                {
+                    command = CommandFactory.CreateCommand(opcode, d1, d2);
+                }
+
+                // Execute the instruction
                 command.Execute(this);
+
+                // Clear the interrupt flags
+                if (command is IRQ)
+                {
+                    _interrupt = false;
+                }
+                else if (_nonMaskableInterrupt)
+                {
+                    _nonMaskableInterrupt = false;
+                }
             }
+        }
+
+        public void IRQ()
+        {
+            _interrupt = true;
+        }
+
+        public void NMI()
+        {
+            _nonMaskableInterrupt = true;
         }
 
         public byte GetValue(AddressingMode addressingMode, byte d1, byte d2)
@@ -110,6 +149,11 @@ namespace Ricoh6502
                 default:
                     throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null);
             }
+        }
+
+        public void SetPCForInterrupt(ushort irqAddress)
+        {
+            PC = (ushort)(Memory[irqAddress] | (Memory[irqAddress + 1] << 8));
         }
 
         public void PushStack(byte v)
