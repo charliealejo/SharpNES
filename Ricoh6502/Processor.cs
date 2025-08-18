@@ -79,9 +79,16 @@ namespace Ricoh6502
         /// </summary>
         public Status Status { get; } = new Status();
 
-        public void Run()
+        public void Run(ushort startPC = 0)
         {
-            SetPCWithInterruptVector(0xFFFC);
+            if (startPC == 0)
+            {
+                SetPCWithInterruptVector(0xFFFC);
+            }
+            else
+            {
+                PC = startPC;
+            }
 
             _cycles = 7;
             var clock = new Stopwatch();
@@ -178,10 +185,10 @@ namespace Ricoh6502
                 AddressingMode.ZeroPageX => Memory[(byte)(d1 + X)],
                 AddressingMode.ZeroPageY => Memory[(byte)(d1 + Y)],
                 AddressingMode.Relative => Memory[(byte)(PC + (sbyte)d1)],
-                AddressingMode.Absolute => Memory[BitConverter.ToUInt16([d2, d1], 0)],
-                AddressingMode.AbsoluteX => Memory[BitConverter.ToUInt16([d2, d1], 0) + X],
-                AddressingMode.AbsoluteY => Memory[BitConverter.ToUInt16([d2, d1], 0) + Y],
-                AddressingMode.Indirect => Memory[BitConverter.ToUInt16([Memory[d2], Memory[d1]], 0)],
+                AddressingMode.Absolute => Memory[BitConverter.ToUInt16([d1, d2], 0)],
+                AddressingMode.AbsoluteX => Memory[BitConverter.ToUInt16([d1, d2], 0) + X],
+                AddressingMode.AbsoluteY => Memory[BitConverter.ToUInt16([d1, d2], 0) + Y],
+                AddressingMode.Indirect => Memory[BitConverter.ToUInt16([Memory[d1], Memory[d2]], 0)],
                 AddressingMode.IndirectX => Memory[BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0)],
                 AddressingMode.IndirectY => Memory[BitConverter.ToUInt16([Memory[d2], Memory[d2 + 1]], 0) + Y],
                 _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
@@ -205,16 +212,16 @@ namespace Ricoh6502
                     Memory[(byte)(PC + (sbyte)d1)] = value;
                     break;
                 case AddressingMode.Absolute:
-                    Memory[BitConverter.ToUInt16([d2, d1], 0)] = value;
+                    Memory[BitConverter.ToUInt16([d1, d2], 0)] = value;
                     break;
                 case AddressingMode.AbsoluteX:
-                    Memory[BitConverter.ToUInt16([d2, d1], 0) + X] = value;
+                    Memory[BitConverter.ToUInt16([d1, d2], 0) + X] = value;
                     break;
                 case AddressingMode.AbsoluteY:
-                    Memory[BitConverter.ToUInt16([d2, d1], 0) + Y] = value;
+                    Memory[BitConverter.ToUInt16([d1, d2], 0) + Y] = value;
                     break;
                 case AddressingMode.Indirect:
-                    Memory[BitConverter.ToUInt16([Memory[d2], Memory[d1]], 0)] = value;
+                    Memory[BitConverter.ToUInt16([Memory[d1], Memory[d2]], 0)] = value;
                     break;
                 case AddressingMode.IndirectX:
                     Memory[BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0)] = value;

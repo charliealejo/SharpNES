@@ -10,7 +10,8 @@ namespace Ricoh6502.Commands
 
         protected override void ExecuteInternal(Processor processor)
         {
-            processor.PC = processor.GetValue(AddressingMode, D1, D2);
+            var address = BitConverter.ToUInt16([D1, D2], 0);
+            processor.PC = AddressingMode == AddressingMode.Absolute ? address : processor.Memory[address];
         }
 
         protected override byte GetInstructionCycleCount()
