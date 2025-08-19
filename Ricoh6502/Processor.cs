@@ -203,6 +203,9 @@ namespace Ricoh6502
         {
             switch (addressingMode)
             {
+                case AddressingMode.Accumulator:
+                    Acc = value;
+                    break;
                 case AddressingMode.ZeroPage:
                     Memory[d1] = value;
                     break;
