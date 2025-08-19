@@ -7,6 +7,7 @@ namespace Ricoh6502.Commands
         protected override void ExecuteInternal(Processor processor)
         {
             processor.X = processor.SP;
+            processor.Status.SetZeroAndNegativeFlags(processor.X);
         }
     }
 }
