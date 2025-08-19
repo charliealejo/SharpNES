@@ -21,6 +21,7 @@ namespace Ricoh6502.Commands
         {
             return AddressingMode switch
             {
+                AddressingMode.Implied => 2,
                 AddressingMode.Immediate => 2,
                 AddressingMode.ZeroPage => 3,
                 AddressingMode.ZeroPageX => 4,
@@ -38,6 +39,7 @@ namespace Ricoh6502.Commands
         {
             return AddressingMode switch
             {
+                AddressingMode.Implied => (ushort)(processor.PC + 1),
                 AddressingMode.Immediate => (ushort)(processor.PC + 2),
                 AddressingMode.ZeroPage => (ushort)(processor.PC + 2),
                 AddressingMode.ZeroPageX => (ushort)(processor.PC + 2),

@@ -190,6 +190,7 @@ namespace Ricoh6502
         {
             return addressingMode switch
             {
+                AddressingMode.Implied => PC,
                 AddressingMode.Immediate => PC,
                 AddressingMode.Accumulator => PC,
                 AddressingMode.ZeroPage => (ushort)(d1 & 0x00FF),

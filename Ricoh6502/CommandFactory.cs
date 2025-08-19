@@ -8,6 +8,7 @@ namespace Ricoh6502
         {
             return opcode switch
             {
+                // Official opcodes
                 0x69 => new ADC(AddressingMode.Immediate, d1, 0),
                 0x65 => new ADC(AddressingMode.ZeroPage, d1, 0),
                 0x75 => new ADC(AddressingMode.ZeroPageX, d1, 0),
@@ -159,6 +160,31 @@ namespace Ricoh6502
                 0x8A => new TXA(),
                 0x9A => new TXS(),
                 0x98 => new TYA(),
+                // Unofficial opcodes
+                0x04 => new NOP(AddressingMode.ZeroPage, d1),
+                0x44 => new NOP(AddressingMode.ZeroPage, d1),
+                0x64 => new NOP(AddressingMode.ZeroPage, d1),
+                0x0C => new NOP(AddressingMode.Absolute, d1, d2),
+                0x14 => new NOP(AddressingMode.ZeroPageX, d1),
+                0x34 => new NOP(AddressingMode.ZeroPageX, d1),
+                0x54 => new NOP(AddressingMode.ZeroPageX, d1),
+                0x74 => new NOP(AddressingMode.ZeroPageX, d1),
+                0xD4 => new NOP(AddressingMode.ZeroPageX, d1),
+                0xF4 => new NOP(AddressingMode.ZeroPageX, d1),
+                0x1A => new NOP(),
+                0x3A => new NOP(),
+                0x5A => new NOP(),
+                0x7A => new NOP(),
+                0xDA => new NOP(),
+                0xFA => new NOP(),
+                0x80 => new NOP(AddressingMode.Immediate, d1),
+                0x1C => new NOP(AddressingMode.AbsoluteX, d1, d2),
+                0x3C => new NOP(AddressingMode.AbsoluteX, d1, d2),
+                0x5C => new NOP(AddressingMode.AbsoluteX, d1, d2),
+                0x7C => new NOP(AddressingMode.AbsoluteX, d1, d2),
+                0xDC => new NOP(AddressingMode.AbsoluteX, d1, d2),
+                0xFC => new NOP(AddressingMode.AbsoluteX, d1, d2),
+                // Default
                 _ => throw new NotImplementedException($"Opcode {opcode:X2} not implemented")
             };
         }
