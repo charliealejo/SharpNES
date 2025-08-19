@@ -9,6 +9,14 @@ namespace Ricoh6502.Commands
             D2 = d2;
         }
 
+        public override byte Execute(Processor processor)
+        {
+            PageCrossed = CheckForPageBoundaryCrossing(
+                processor.GetBaseAddress(AddressingMode, D1, D2),
+                processor.GetEffectiveAddress(AddressingMode, D1, D2));
+            return base.Execute(processor);
+        }
+
         protected override byte GetInstructionCycleCount()
         {
             return AddressingMode switch
@@ -43,13 +51,13 @@ namespace Ricoh6502.Commands
             };
         }
 
-        protected override bool CheckForPageBoundaryCrossing(ushort currentInstructionAddress, ushort nextInstructionAddress)
+        protected override bool CheckForPageBoundaryCrossing(ushort baseAddress, ushort effectiveAddress)
         {
             if (AddressingMode == AddressingMode.AbsoluteX ||
                 AddressingMode == AddressingMode.AbsoluteY ||
                 AddressingMode == AddressingMode.IndirectY)
             {
-                return (nextInstructionAddress & 0xFF00) != (currentInstructionAddress & 0xFF00);
+                return (baseAddress & 0xFF00) != (effectiveAddress & 0xFF00);
             }
             return false;
         }

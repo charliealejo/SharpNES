@@ -175,6 +175,37 @@ namespace Ricoh6502
             _nonMaskableInterrupt = true;
         }
 
+        public ushort GetBaseAddress(AddressingMode addressingMode, byte d1, byte d2)
+        {
+            return addressingMode switch
+            {
+                AddressingMode.AbsoluteX => BitConverter.ToUInt16([d1, d2], 0),
+                AddressingMode.AbsoluteY => BitConverter.ToUInt16([d1, d2], 0),
+                AddressingMode.IndirectY => BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0),
+                _ => 0,
+            };
+        }
+
+        public ushort GetEffectiveAddress(AddressingMode addressingMode, byte d1, byte d2)
+        {
+            return addressingMode switch
+            {
+                AddressingMode.Immediate => PC,
+                AddressingMode.Accumulator => PC,
+                AddressingMode.ZeroPage => (ushort)(d1 & 0x00FF),
+                AddressingMode.ZeroPageX => (byte)(d1 + X),
+                AddressingMode.ZeroPageY => (byte)(d1 + Y),
+                AddressingMode.Relative => (byte)(PC + (sbyte)d1),
+                AddressingMode.Absolute => BitConverter.ToUInt16([d1, d2], 0),
+                AddressingMode.AbsoluteX => (ushort)(BitConverter.ToUInt16([d1, d2], 0) + X),
+                AddressingMode.AbsoluteY => (ushort)(BitConverter.ToUInt16([d1, d2], 0) + Y),
+                AddressingMode.Indirect => Memory[BitConverter.ToUInt16([d1, d2], 0)],
+                AddressingMode.IndirectX => BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0),
+                AddressingMode.IndirectY => (ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y),
+                _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
+            };
+        }
+
         public byte GetValue(AddressingMode addressingMode, byte d1, byte d2)
         {
             return addressingMode switch
@@ -186,8 +217,8 @@ namespace Ricoh6502
                 AddressingMode.ZeroPageY => Memory[(byte)(d1 + Y)],
                 AddressingMode.Relative => Memory[(byte)(PC + (sbyte)d1)],
                 AddressingMode.Absolute => Memory[BitConverter.ToUInt16([d1, d2], 0)],
-                AddressingMode.AbsoluteX => Memory[BitConverter.ToUInt16([d1, d2], 0) + X],
-                AddressingMode.AbsoluteY => Memory[BitConverter.ToUInt16([d1, d2], 0) + Y],
+                AddressingMode.AbsoluteX => Memory[(ushort)(BitConverter.ToUInt16([d1, d2], 0) + X)],
+                AddressingMode.AbsoluteY => Memory[(ushort)(BitConverter.ToUInt16([d1, d2], 0) + Y)],
                 AddressingMode.Indirect => Memory[Memory[BitConverter.ToUInt16([d1, d2], 0)]],
                 AddressingMode.IndirectX => Memory[BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0)],
                 AddressingMode.IndirectY => Memory[(ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y)],

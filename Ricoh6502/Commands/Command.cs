@@ -5,18 +5,19 @@ namespace Ricoh6502.Commands
         public AddressingMode AddressingMode { get; protected set; } = addressingMode;
         protected byte D1 { get; set; }
         protected byte D2 { get; set; }
+        protected bool PageCrossed { get; set; } = false;
 
         /// <summary>
         /// Executes the command using the specified processor.
         /// </summary>
         /// <param name="processor">Instance of the processor</param>
         /// <returns>The number of cycles taken to execute the command</returns>
-        public byte Execute(Processor processor)
+        public virtual byte Execute(Processor processor)
         {
-            ExecuteInternal(processor);            
+            ExecuteInternal(processor);
             var nextInstructionAddress = GetNextInstructionAddress(processor);
             var cycles = GetInstructionCycleCount();
-            if (CheckForPageBoundaryCrossing(processor.PC, nextInstructionAddress))
+            if (PageCrossed)
             {
                 cycles += 1;
             }
@@ -45,9 +46,9 @@ namespace Ricoh6502.Commands
         /// <summary>
         /// Checks if the instruction crosses a page boundary.
         /// </summary>
-        /// <param name="currentInstructionAddress">Current instruction address.</param>
-        /// <param name="nextInstructionAddress">Next instruction address.</param>
-        /// <returns></returns>
-        protected abstract bool CheckForPageBoundaryCrossing(ushort currentInstructionAddress, ushort nextInstructionAddress);
+        /// <param name="baseAddress">Base address (provided in the instruction).</param>
+        /// <param name="effectiveAddress">Effective address (calculated during execution).</param>
+        /// <returns>true if the instruction crosses a page boundary; otherwise, false.</returns>
+        protected abstract bool CheckForPageBoundaryCrossing(ushort baseAddress, ushort effectiveAddress);
     }
 }
