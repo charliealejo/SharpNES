@@ -123,8 +123,12 @@ namespace Ricoh6502
                     string instrName = command.GetType().Name;
                     string b1 = instrName.Length > 0 ? $"{d1:X2}" : "  ";
                     string b2 = instrName.Length > 0 ? $"{d2:X2}" : "  ";
-                    string logLine = $"{PC:X4}  {opcode:X2} {b1} {b2}  {instrName,-16}  A:{Acc:X2} X:{X:X2} Y:{Y:X2} SP:{SP:X2} CYC:{_cycles}";
+                    string logLine = $"{PC:X4}  {opcode:X2} {b1} {b2}  {instrName,-16}  A:{Acc:X2} X:{X:X2} Y:{Y:X2} P:{Status.GetStatus():X2} SP:{SP:X2} CYC:{_cycles}";
                     _logWriter.WriteLine(logLine);
+                }
+                if (command is BRK)
+                {
+                    break;
                 }
 
                 // Execute the instruction

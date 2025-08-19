@@ -15,7 +15,7 @@ namespace Ricoh6502.Commands
             if (CheckCondition(processor.Status))
             {
                 BranchTaken = true;
-                processor.PC = (ushort)(processor.PC + (sbyte)processor.GetValue(AddressingMode, D1, 0));
+                processor.PC = (ushort)(processor.PC + (sbyte)D1);
             }
         }
 

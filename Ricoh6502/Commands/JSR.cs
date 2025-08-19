@@ -13,7 +13,7 @@ namespace Ricoh6502.Commands
             var returnAddress = (ushort)(processor.PC + 2);
             processor.PushStack((byte)(returnAddress >> 8));
             processor.PushStack((byte)returnAddress);
-            processor.PC = processor.GetValue(AddressingMode, D1, D2);
+            processor.PC = BitConverter.ToUInt16([D1, D2], 0);
         }
 
         protected override byte GetInstructionCycleCount()

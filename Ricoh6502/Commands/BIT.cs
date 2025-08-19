@@ -8,7 +8,8 @@ namespace Ricoh6502.Commands
         {
             byte value = processor.GetValue(AddressingMode, D1, D2);
             byte result = (byte)(processor.Acc & value);
-            processor.Status.SetZeroAndNegativeFlags(result);
+            processor.Status.ZeroFlag = result == 0;
+            processor.Status.NegativeFlag = (result & 0x80) != 0;
             processor.Status.OverflowFlag = (value & 0x40) != 0;
         }
     }

@@ -99,22 +99,6 @@
             NegativeFlag = (value & 0x80) != 0;
         }
 
-        /// <summary>
-        /// Sets the Carry and Overflow flags based on the given values.
-        /// </summary>
-        /// <remarks>
-        /// Sets the carry flag when the result is greater than 0xFF.
-        /// Sets the overflow flag based on the given accumulator and memory values.
-        /// </remarks>
-        /// <param name="result">The result of the current operation.</param>
-        /// <param name="acc">The accumulator value before the operation.</param>
-        /// <param name="memory">The memory value.</param>
-        public void SetCarryAndOverflowFlags(int result, byte acc, byte memory)
-        {
-            CarryFlag = result > 0xFF || result < 0;
-            OverflowFlag = ((acc ^ (byte)result) & (acc ^ memory) & 0x80) != 0;
-        }
-
         public byte GetStatus()
         {
             byte status = 0;
@@ -123,7 +107,7 @@
             status |= (byte)(InterruptDisable ? 1 << 2 : 0);
             status |= (byte)(DecimalMode ? 1 << 3 : 0);
             status |= (byte)((BreakCommand ? 1 : 0) << 4);
-            status |= (byte)((BreakCommand ? 1 : 0) << 5);
+            status |= 1 << 5; // Bit 5 is always set to 1
             status |= (byte)(OverflowFlag ? 1 << 6 : 0);
             status |= (byte)(NegativeFlag ? 1 << 7 : 0);
             return status;
