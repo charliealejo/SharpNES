@@ -1,3 +1,4 @@
+using Microsoft.Win32.SafeHandles;
 using Ricoh6502.Commands;
 
 namespace Ricoh6502
@@ -161,6 +162,12 @@ namespace Ricoh6502
                 0x9A => new TXS(),
                 0x98 => new TYA(),
                 // Unofficial opcodes
+                0xA3 => new LAX(AddressingMode.IndirectX, d1, 0),
+                0xA7 => new LAX(AddressingMode.ZeroPage, d1, 0),
+                0xAF => new LAX(AddressingMode.Absolute, d1, d2),
+                0xB3 => new LAX(AddressingMode.IndirectY, d1, 0),
+                0xB7 => new LAX(AddressingMode.ZeroPageY, d1, 0),
+                0xBF => new LAX(AddressingMode.AbsoluteY, d1, d2),
                 0x04 => new NOP(AddressingMode.ZeroPage, d1),
                 0x44 => new NOP(AddressingMode.ZeroPage, d1),
                 0x64 => new NOP(AddressingMode.ZeroPage, d1),
@@ -184,6 +191,10 @@ namespace Ricoh6502
                 0x7C => new NOP(AddressingMode.AbsoluteX, d1, d2),
                 0xDC => new NOP(AddressingMode.AbsoluteX, d1, d2),
                 0xFC => new NOP(AddressingMode.AbsoluteX, d1, d2),
+                0x83 => new SAX(AddressingMode.IndirectX, d1, 0),
+                0x87 => new SAX(AddressingMode.ZeroPage, d1, 0),
+                0x8F => new SAX(AddressingMode.Absolute, d1, d2),
+                0x97 => new SAX(AddressingMode.ZeroPageY, d1, 0),
                 // Default
                 _ => throw new NotImplementedException($"Opcode {opcode:X2} not implemented")
             };
