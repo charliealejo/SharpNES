@@ -2,7 +2,7 @@ namespace Ricoh6502.Commands
 {
     public abstract class Command(AddressingMode addressingMode)
     {
-        protected AddressingMode AddressingMode { get; set; } = addressingMode;
+        public AddressingMode AddressingMode { get; protected set; } = addressingMode;
         protected byte D1 { get; set; }
         protected byte D2 { get; set; }
 

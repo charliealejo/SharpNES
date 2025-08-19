@@ -120,11 +120,7 @@ namespace Ricoh6502
                 // Debug logging before execution
                 if (_debug && _logWriter != null)
                 {
-                    string instrName = command.GetType().Name;
-                    string b1 = instrName.Length > 0 ? $"{d1:X2}" : "  ";
-                    string b2 = instrName.Length > 0 ? $"{d2:X2}" : "  ";
-                    string logLine = $"{PC:X4}  {opcode:X2} {b1} {b2}  {instrName,-16}  A:{Acc:X2} X:{X:X2} Y:{Y:X2} P:{Status.GetStatus():X2} SP:{SP:X2} CYC:{_cycles}";
-                    _logWriter.WriteLine(logLine);
+                    WriteLog(opcode, d1, d2, command);
                 }
                 if (command is BRK)
                 {
@@ -194,7 +190,7 @@ namespace Ricoh6502
                 AddressingMode.AbsoluteY => Memory[BitConverter.ToUInt16([d1, d2], 0) + Y],
                 AddressingMode.Indirect => Memory[BitConverter.ToUInt16([Memory[d1], Memory[d2]], 0)],
                 AddressingMode.IndirectX => Memory[BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0)],
-                AddressingMode.IndirectY => Memory[BitConverter.ToUInt16([Memory[d2], Memory[d2 + 1]], 0) + Y],
+                AddressingMode.IndirectY => Memory[BitConverter.ToUInt16([Memory[d1], Memory[d1 + 1]], 0) + Y],
                 _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
             };
         }
@@ -263,6 +259,36 @@ namespace Ricoh6502
             PC = 0xFFFC;
             SP = SP -= 3;
             Status.InterruptDisable = true;
+        }
+
+        private void WriteLog(byte opcode, byte d1, byte d2, Command command)
+        {
+            var addMode = command.AddressingMode;
+            string b1 = addMode == AddressingMode.Implied ? "  " : $"{d1:X2}";
+            string b2 = new[] { AddressingMode.Absolute, AddressingMode.AbsoluteX, AddressingMode.AbsoluteY, AddressingMode.Indirect }.Contains(addMode) ? $"{d2:X2}" : "  ";
+            string logLine = $"{PC:X4}  {opcode:X2} {b1} {b2}  {command.GetType().Name} {ParseAddress(d1, d2, addMode),-26}  A:{Acc:X2} X:{X:X2} Y:{Y:X2} P:{Status.GetStatus():X2} SP:{SP:X2} CYC:{_cycles}";
+            _logWriter!.WriteLine(logLine);
+        }
+
+        private string ParseAddress(byte d1, byte d2, AddressingMode addressingMode)
+        {
+            return addressingMode switch
+            {
+                AddressingMode.Implied => "",
+                AddressingMode.Accumulator => "",
+                AddressingMode.Immediate => $"#${d1:X2}",
+                AddressingMode.ZeroPage => $"${d1:X2} = {Memory[d1]:X2}",
+                AddressingMode.ZeroPageX => $"${d1:X2},X",
+                AddressingMode.ZeroPageY => $"${d1:X2},Y",
+                AddressingMode.Relative => $"${PC + (sbyte)d1:X2}",
+                AddressingMode.Absolute => $"${BitConverter.ToUInt16([d1, d2], 0):X4}",
+                AddressingMode.AbsoluteX => $"${BitConverter.ToUInt16([d1, d2], 0):X4},X",
+                AddressingMode.AbsoluteY => $"${BitConverter.ToUInt16([d1, d2], 0):X4},Y",
+                AddressingMode.Indirect => $"(${BitConverter.ToUInt16([d1, d2], 0):X4})",
+                AddressingMode.IndirectX => $"(${d1:X2},X)",
+                AddressingMode.IndirectY => $"(${d1:X2}),Y",
+                _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
+            };
         }
     }
 }
