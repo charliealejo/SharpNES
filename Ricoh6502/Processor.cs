@@ -219,7 +219,11 @@ namespace Ricoh6502
                 AddressingMode.Absolute => Memory[BitConverter.ToUInt16([d1, d2], 0)],
                 AddressingMode.AbsoluteX => Memory[(ushort)(BitConverter.ToUInt16([d1, d2], 0) + X)],
                 AddressingMode.AbsoluteY => Memory[(ushort)(BitConverter.ToUInt16([d1, d2], 0) + Y)],
-                AddressingMode.Indirect => Memory[Memory[BitConverter.ToUInt16([d1, d2], 0)]],
+                AddressingMode.Indirect => Memory[BitConverter.ToUInt16(
+                    [Memory[BitConverter.ToUInt16([d1, d2], 0)],
+                     (BitConverter.ToUInt16([d1, d2], 0) & 0x00FF) == 0xFF
+                        ? Memory[BitConverter.ToUInt16([d1, d2], 0) & 0xFF00]
+                        : Memory[BitConverter.ToUInt16([d1, d2], 0) + 1]], 0)],
                 AddressingMode.IndirectX => Memory[BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0)],
                 AddressingMode.IndirectY => Memory[(ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y)],
                 _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
@@ -254,14 +258,11 @@ namespace Ricoh6502
                 case AddressingMode.AbsoluteY:
                     Memory[BitConverter.ToUInt16([d1, d2], 0) + Y] = value;
                     break;
-                case AddressingMode.Indirect:
-                    Memory[Memory[BitConverter.ToUInt16([d1, d2], 0)]] = value;
-                    break;
                 case AddressingMode.IndirectX:
                     Memory[BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0)] = value;
                     break;
                 case AddressingMode.IndirectY:
-                    Memory[(ushort)(BitConverter.ToUInt16([Memory[d2], Memory[(byte)(d2 + 1)]], 0) + Y)] = value;
+                    Memory[(ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y)] = value;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null);
@@ -312,12 +313,16 @@ namespace Ricoh6502
                 AddressingMode.ZeroPageX => $"${d1:X2},X",
                 AddressingMode.ZeroPageY => $"${d1:X2},Y",
                 AddressingMode.Relative => $"${PC + (sbyte)d1:X2}",
-                AddressingMode.Absolute => $"${BitConverter.ToUInt16([d1, d2], 0):X4}",
+                AddressingMode.Absolute => $"${BitConverter.ToUInt16([d1, d2], 0):X4} = {Memory[BitConverter.ToUInt16([d1, d2], 0)]:X2}",
                 AddressingMode.AbsoluteX => $"${BitConverter.ToUInt16([d1, d2], 0):X4},X",
                 AddressingMode.AbsoluteY => $"${BitConverter.ToUInt16([d1, d2], 0):X4},Y",
-                AddressingMode.Indirect => $"(${BitConverter.ToUInt16([d1, d2], 0):X4})",
+                AddressingMode.Indirect => $"(${BitConverter.ToUInt16([d1, d2], 0):X4}) = {BitConverter.ToUInt16(
+                    [Memory[BitConverter.ToUInt16([d1, d2], 0)],
+                     (BitConverter.ToUInt16([d1, d2], 0) & 0x00FF) == 0xFF
+                        ? Memory[BitConverter.ToUInt16([d1, d2], 0) & 0xFF00]
+                        : Memory[BitConverter.ToUInt16([d1, d2], 0) + 1]], 0):X4}",
                 AddressingMode.IndirectX => $"(${d1:X2},X)",
-                AddressingMode.IndirectY => $"(${d1:X2}),Y",
+                AddressingMode.IndirectY => $"(${d1:X2}),Y = {BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0):X4} @ {(ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y):X4} = {Memory[(ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y)]:X2}",
                 _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
             };
         }
