@@ -195,6 +195,7 @@ namespace Ricoh6502
                 0x87 => new SAX(AddressingMode.ZeroPage, d1, 0),
                 0x8F => new SAX(AddressingMode.Absolute, d1, d2),
                 0x97 => new SAX(AddressingMode.ZeroPageY, d1, 0),
+                0xEB => new SBC(AddressingMode.Immediate, d1, 0),
                 // Default
                 _ => throw new NotImplementedException($"Opcode {opcode:X2} not implemented")
             };
