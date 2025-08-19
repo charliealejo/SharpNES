@@ -12,7 +12,7 @@ namespace Ricoh6502.Commands
             var result = processor.Acc + value + carry;
             processor.Acc = (byte)(result & 0xFF);
             processor.Status.CarryFlag = result > 0xFF;
-            processor.Status.OverflowFlag = (((byte)result ^ prevAcc) & ((byte)result ^ value) & 0x80) != 0;
+            processor.Status.OverflowFlag = ((processor.Acc ^ prevAcc) & (processor.Acc ^ value) & 0x80) != 0;
             processor.Status.SetZeroAndNegativeFlags(processor.Acc);
         }
     }

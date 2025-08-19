@@ -188,7 +188,7 @@ namespace Ricoh6502
                 AddressingMode.Absolute => Memory[BitConverter.ToUInt16([d1, d2], 0)],
                 AddressingMode.AbsoluteX => Memory[BitConverter.ToUInt16([d1, d2], 0) + X],
                 AddressingMode.AbsoluteY => Memory[BitConverter.ToUInt16([d1, d2], 0) + Y],
-                AddressingMode.Indirect => Memory[BitConverter.ToUInt16([Memory[d1], Memory[d2]], 0)],
+                AddressingMode.Indirect => Memory[Memory[BitConverter.ToUInt16([d1, d2], 0)]],
                 AddressingMode.IndirectX => Memory[BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0)],
                 AddressingMode.IndirectY => Memory[BitConverter.ToUInt16([Memory[d1], Memory[d1 + 1]], 0) + Y],
                 _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
