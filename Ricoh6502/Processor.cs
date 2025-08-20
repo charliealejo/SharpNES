@@ -1,13 +1,12 @@
 ﻿using System.Diagnostics;
+using Logger;
 using Ricoh6502.Commands;
 
 namespace Ricoh6502
 {
     public class Processor
     {
-        private readonly bool _debug;
-
-        private StreamWriter? _logWriter;
+        private NesLogger? _logger;
 
         private double _cpuCycleTimeInNanoSeconds;
 
@@ -19,7 +18,7 @@ namespace Ricoh6502
 
         private uint _cycles;
 
-        public Processor(SystemVersion version, bool debug = false)
+        public Processor(SystemVersion version, NesLogger? logger = null)
         {
             _cpuFrequency = version switch
             {
@@ -30,18 +29,10 @@ namespace Ricoh6502
             };
             _cpuCycleTimeInNanoSeconds = 1e9 / _cpuFrequency;
 
-            _debug = debug;
-            if (_debug)
-            {
-                var logDir = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
-                if (!System.IO.Directory.Exists(logDir))
-                    System.IO.Directory.CreateDirectory(logDir);
-                var logPath = System.IO.Path.Combine(logDir, $"cpu_{DateTime.Now:yyyyMMdd_HHmmss}.log");
-                _logWriter = new System.IO.StreamWriter(logPath, false) { AutoFlush = true };
-            }
-
             _interrupt = false;
             _nonMaskableInterrupt = false;
+
+            _logger = logger;
         }
 
         /// <summary>
@@ -118,10 +109,12 @@ namespace Ricoh6502
                 }
 
                 // Debug logging before execution
-                if (_debug && _logWriter != null)
+                if (_logger != null)
                 {
                     WriteLog(opcode, d1, d2, command);
                 }
+
+                // Check for break command
                 if (command is BRK)
                 {
                     break;
@@ -148,21 +141,6 @@ namespace Ricoh6502
 
                 _cycles += cycles;
             }
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing && _logWriter != null)
-            {
-                _logWriter.Dispose();
-                _logWriter = null;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
         public void IRQ()
@@ -300,7 +278,7 @@ namespace Ricoh6502
             string b1 = addMode == AddressingMode.Implied ? "  " : $"{d1:X2}";
             string b2 = new[] { AddressingMode.Absolute, AddressingMode.AbsoluteX, AddressingMode.AbsoluteY, AddressingMode.Indirect }.Contains(addMode) ? $"{d2:X2}" : "  ";
             string logLine = $"{PC:X4}  {opcode:X2} {b1} {b2}  {command.GetType().Name} {ParseAddress(d1, d2, addMode),-26}  A:{Acc:X2} X:{X:X2} Y:{Y:X2} P:{Status.GetStatus():X2} SP:{SP:X2} CYC:{_cycles}";
-            _logWriter!.WriteLine(logLine);
+            _logger!.Log(logLine);
         }
 
         private string ParseAddress(byte d1, byte d2, AddressingMode addressingMode)
