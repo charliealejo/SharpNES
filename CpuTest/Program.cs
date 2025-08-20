@@ -1,6 +1,4 @@
-﻿using Cartridge;
-using Logger;
-using Ricoh6502;
+﻿using Emulator;
 
 namespace CpuTest
 {
@@ -8,9 +6,8 @@ namespace CpuTest
     {
         static void Main()
         {
-            Processor cpu = new(SystemVersion.NTSC, new NesLogger());
-            Loader.LoadCartridge("testroms/nestest.nes", cpu.Memory);
-            cpu.Run(0xC000);
+            var emulator = new SharpNesEmu("testroms/nestest.nes", true, 0xC000);
+            emulator.Run();
         }
     }
 }

@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Cartridge\Cartridge.csproj" />
-    <ProjectReference Include="..\Ricoh6502\Ricoh6502.csproj" />
+    <ProjectReference Include="..\Emulator\Emulator.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
