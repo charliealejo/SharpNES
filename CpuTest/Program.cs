@@ -6,7 +6,12 @@ namespace CpuTest
     {
         static void Main()
         {
-            var emulator = new SharpNesEmu("testroms/nestest.nes", true, 0xC000);
+            var emulator = new SharpNesEmu(
+                "testroms/nestest.nes",
+                Ricoh6502.SystemVersion.NTSC,
+                true,
+                0xC000);
+                
             emulator.Run();
         }
     }

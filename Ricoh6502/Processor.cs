@@ -6,11 +6,7 @@ namespace Ricoh6502
 {
     public class Processor
     {
-        private NesLogger? _logger;
-
-        private double _cpuCycleTimeInNanoSeconds;
-
-        private double _cpuFrequency;
+        private readonly NesLogger? _logger;
 
         private bool _interrupt;
 
@@ -18,17 +14,10 @@ namespace Ricoh6502
 
         private uint _cycles;
 
+        private uint _nextInstructionCycle;
+
         public Processor(SystemVersion version, NesLogger? logger = null)
         {
-            _cpuFrequency = version switch
-            {
-                SystemVersion.NTSC => 1_789_773,
-                SystemVersion.PAL => 1_662_607,
-                SystemVersion.Dendy => 1_773_448,
-                _ => throw new ArgumentOutOfRangeException(nameof(version), version, null)
-            };
-            _cpuCycleTimeInNanoSeconds = 1e9 / _cpuFrequency;
-
             _interrupt = false;
             _nonMaskableInterrupt = false;
 
@@ -70,77 +59,65 @@ namespace Ricoh6502
         /// </summary>
         public Status Status { get; } = new Status();
 
-        public void Run(ushort startPC = 0)
+        /// <summary>
+        /// Code that executes every tick of the clock
+        /// </summary>
+        /// <returns>true if the CPU is still executing, false if it has halted</returns>
+        public bool Clock()
         {
-            if (startPC == 0)
+            if (_cycles != _nextInstructionCycle)
             {
-                SetPCWithInterruptVector(0xFFFC);
+                _cycles++;
+                return true;
+            }
+
+            // Fetch the next instruction
+            byte opcode = Memory[PC];
+            byte d1 = Memory[(ushort)(PC + 1)];
+            byte d2 = Memory[(ushort)(PC + 2)];
+
+            // Create the next instruction checking for interrupts
+            Command command;
+            if (_nonMaskableInterrupt)
+            {
+                command = new NMI();
+            }
+            else if (_interrupt && !Status.InterruptDisable)
+            {
+                command = new IRQ();
             }
             else
             {
-                PC = startPC;
+                command = CommandFactory.CreateCommand(opcode, d1, d2);
             }
 
-            _cycles = 7;
-            var clock = new Stopwatch();
-            var spinWait = new SpinWait();
-            while (true)
+            // Debug logging before execution
+            if (_logger != null)
             {
-                clock.Restart();
-
-                // Fetch the next instruction
-                byte opcode = Memory[PC];
-                byte d1 = Memory[(ushort)(PC + 1)];
-                byte d2 = Memory[(ushort)(PC + 2)];
-
-                // Create the next instruction checking for interrupts
-                Command command;
-                if (_nonMaskableInterrupt)
-                {
-                    command = new NMI();
-                }
-                else if (_interrupt && !Status.InterruptDisable)
-                {
-                    command = new IRQ();
-                }
-                else
-                {
-                    command = CommandFactory.CreateCommand(opcode, d1, d2);
-                }
-
-                // Debug logging before execution
-                if (_logger != null)
-                {
-                    WriteLog(opcode, d1, d2, command);
-                }
-
-                // Check for break command
-                if (command is BRK)
-                {
-                    break;
-                }
-
-                // Execute the instruction
-                var cycles = command.Execute(this);
-
-                // Clear the interrupt flags
-                if (command is IRQ)
-                {
-                    _interrupt = false;
-                }
-                else if (_nonMaskableInterrupt)
-                {
-                    _nonMaskableInterrupt = false;
-                }
-
-                // Wait if needed
-                do
-                {
-                    spinWait.SpinOnce();
-                } while (clock.Elapsed.TotalNanoseconds < cycles * _cpuCycleTimeInNanoSeconds);
-
-                _cycles += cycles;
+                WriteLog(opcode, d1, d2, command);
             }
+
+            // Check for break command
+            if (command is BRK)
+            {
+                return false;
+            }
+
+            // Execute the instruction
+            _nextInstructionCycle += command.Execute(this);
+
+            // Clear the interrupt flags
+            if (command is IRQ)
+            {
+                _interrupt = false;
+            }
+            else if (_nonMaskableInterrupt)
+            {
+                _nonMaskableInterrupt = false;
+            }
+
+            _cycles++;
+            return true;
         }
 
         public void IRQ()
@@ -267,9 +244,11 @@ namespace Ricoh6502
 
         public void Reset()
         {
-            PC = 0xFFFC;
+            SetPCWithInterruptVector(0xFFFC);
             SP = SP -= 3;
             Status.InterruptDisable = true;
+            _cycles = 7;
+            _nextInstructionCycle = 7;
         }
 
         private void WriteLog(byte opcode, byte d1, byte d2, Command command)
