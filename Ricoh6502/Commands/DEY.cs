@@ -4,10 +4,10 @@ namespace Ricoh6502.Commands
     {
         public DEY() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.Y--;
-            processor.Status.SetZeroAndNegativeFlags(processor.Y);
+            cpu.Y--;
+            cpu.Status.SetZeroAndNegativeFlags(cpu.Y);
         }
     }
 }

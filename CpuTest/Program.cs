@@ -8,7 +8,6 @@ namespace CpuTest
         {
             var emulator = new SharpNesEmu(
                 "testroms/nestest.nes",
-                Ricoh6502.SystemVersion.NTSC,
                 true,
                 0xC000);
                 

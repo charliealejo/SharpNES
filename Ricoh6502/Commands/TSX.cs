@@ -4,10 +4,10 @@ namespace Ricoh6502.Commands
     {
         public TSX() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.X = processor.SP;
-            processor.Status.SetZeroAndNegativeFlags(processor.X);
+            cpu.X = cpu.SP;
+            cpu.Status.SetZeroAndNegativeFlags(cpu.X);
         }
     }
 }

@@ -6,9 +6,9 @@ namespace Ricoh6502.Commands
         {
         }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.SetValue(AddressingMode, D1, D2, processor.Y);
+            cpu.SetValue(AddressingMode, D1, D2, cpu.Y);
         }
     }
 }

@@ -6,11 +6,11 @@ namespace Ricoh6502.Commands
         {
         }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            byte value = processor.GetValue(AddressingMode, D1, D2);
-            processor.Y = value;
-            processor.Status.SetZeroAndNegativeFlags(value);
+            byte value = cpu.GetValue(AddressingMode, D1, D2);
+            cpu.Y = value;
+            cpu.Status.SetZeroAndNegativeFlags(value);
         }
     }
 }

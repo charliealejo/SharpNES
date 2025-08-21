@@ -4,10 +4,10 @@ namespace Ricoh6502.Commands
     {
         public TYA() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.Acc = processor.Y;
-            processor.Status.SetZeroAndNegativeFlags(processor.Acc);
+            cpu.Acc = cpu.Y;
+            cpu.Status.SetZeroAndNegativeFlags(cpu.Acc);
         }
     }
 }

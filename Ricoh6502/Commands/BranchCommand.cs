@@ -10,12 +10,12 @@ namespace Ricoh6502.Commands
             D1 = d1;
         }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            if (CheckCondition(processor.Status))
+            if (CheckCondition(cpu.Status))
             {
                 BranchTaken = true;
-                processor.PC = (ushort)(processor.PC + (sbyte)D1);
+                cpu.PC = (ushort)(cpu.PC + (sbyte)D1);
             }
         }
 
@@ -26,9 +26,9 @@ namespace Ricoh6502.Commands
             return BranchTaken ? (byte)3 : (byte)2;
         }
 
-        protected override ushort GetNextInstructionAddress(Processor processor)
+        protected override ushort GetNextInstructionAddress(CPU cpu)
         {
-            return (ushort)(processor.PC + 2);
+            return (ushort)(cpu.PC + 2);
         }
 
         protected override bool CheckForPageBoundaryCrossing(ushort currentInstructionAddress, ushort nextInstructionAddress)

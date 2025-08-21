@@ -4,11 +4,11 @@ namespace Ricoh6502.Commands
     {
         public EOR(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            byte value = processor.GetValue(AddressingMode, D1, D2);
-            processor.Acc = (byte)(processor.Acc ^ value);
-            processor.Status.SetZeroAndNegativeFlags(processor.Acc);
+            byte value = cpu.GetValue(AddressingMode, D1, D2);
+            cpu.Acc = (byte)(cpu.Acc ^ value);
+            cpu.Status.SetZeroAndNegativeFlags(cpu.Acc);
         }
     }
 }

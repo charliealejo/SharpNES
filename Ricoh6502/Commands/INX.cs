@@ -4,10 +4,10 @@ namespace Ricoh6502.Commands
     {
         public INX() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.X++;
-            processor.Status.SetZeroAndNegativeFlags(processor.X);
+            cpu.X++;
+            cpu.Status.SetZeroAndNegativeFlags(cpu.X);
         }
     }
 }

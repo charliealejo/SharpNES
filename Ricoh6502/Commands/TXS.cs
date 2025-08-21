@@ -4,9 +4,9 @@ namespace Ricoh6502.Commands
     {
         public TXS() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.SP = processor.X;
+            cpu.SP = cpu.X;
         }
     }
 }

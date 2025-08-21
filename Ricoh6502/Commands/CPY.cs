@@ -4,12 +4,12 @@ namespace Ricoh6502.Commands
     {
         public CPY(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            byte value = processor.GetValue(AddressingMode, D1, D2);
-            var result = (byte)(processor.Y - value);
-            processor.Status.SetZeroAndNegativeFlags(result);
-            processor.Status.CarryFlag = processor.Y >= value;
+            byte value = cpu.GetValue(AddressingMode, D1, D2);
+            var result = (byte)(cpu.Y - value);
+            cpu.Status.SetZeroAndNegativeFlags(result);
+            cpu.Status.CarryFlag = cpu.Y >= value;
         }
     }
 }

@@ -4,9 +4,9 @@ namespace Ricoh6502.Commands
     {
         public PHP() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.PushStack(processor.Status.GetStatus());
+            cpu.PushStack(cpu.Status.GetStatus());
         }
     }
 }

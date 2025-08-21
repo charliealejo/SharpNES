@@ -10,15 +10,15 @@ namespace Ricoh6502.Commands
             SoftwareInterrupt = softwareInterrupt;
         }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            var returnAddress = (ushort)(processor.PC + 2);
-            processor.PushStack((byte)(returnAddress >> 8));
-            processor.PushStack((byte)returnAddress);
-            processor.PushStack(processor.Status.GetStatus());
-            processor.Status.InterruptDisable = true;
-            processor.Status.BreakCommand = SoftwareInterrupt;
-            processor.SetPCWithInterruptVector(0xFFFE);
+            var returnAddress = (ushort)(cpu.PC + 2);
+            cpu.PushStack((byte)(returnAddress >> 8));
+            cpu.PushStack((byte)returnAddress);
+            cpu.PushStack(cpu.Status.GetStatus());
+            cpu.Status.InterruptDisable = true;
+            cpu.Status.BreakCommand = SoftwareInterrupt;
+            cpu.SetPCWithInterruptVector(0xFFFE);
         }
 
         protected override byte GetInstructionCycleCount()
@@ -26,9 +26,9 @@ namespace Ricoh6502.Commands
             return 7;
         }
 
-        protected override ushort GetNextInstructionAddress(Processor processor)
+        protected override ushort GetNextInstructionAddress(CPU cpu)
         {
-            return processor.PC;
+            return cpu.PC;
         }
 
         protected override bool CheckForPageBoundaryCrossing(ushort currentInstructionAddress, ushort nextInstructionAddress)

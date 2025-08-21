@@ -25,18 +25,18 @@ namespace Ricoh6502.Commands
             };
         }
 
-        protected override ushort GetNextInstructionAddress(Processor processor)
+        protected override ushort GetNextInstructionAddress(CPU cpu)
         {
             return AddressingMode switch
             {
-                AddressingMode.ZeroPage => (ushort)(processor.PC + 2),
-                AddressingMode.ZeroPageX => (ushort)(processor.PC + 2),
-                AddressingMode.ZeroPageY => (ushort)(processor.PC + 2),
-                AddressingMode.Absolute => (ushort)(processor.PC + 3),
-                AddressingMode.AbsoluteX => (ushort)(processor.PC + 3),
-                AddressingMode.AbsoluteY => (ushort)(processor.PC + 3),
-                AddressingMode.IndirectX => (ushort)(processor.PC + 2),
-                AddressingMode.IndirectY => (ushort)(processor.PC + 2),
+                AddressingMode.ZeroPage => (ushort)(cpu.PC + 2),
+                AddressingMode.ZeroPageX => (ushort)(cpu.PC + 2),
+                AddressingMode.ZeroPageY => (ushort)(cpu.PC + 2),
+                AddressingMode.Absolute => (ushort)(cpu.PC + 3),
+                AddressingMode.AbsoluteX => (ushort)(cpu.PC + 3),
+                AddressingMode.AbsoluteY => (ushort)(cpu.PC + 3),
+                AddressingMode.IndirectX => (ushort)(cpu.PC + 2),
+                AddressingMode.IndirectY => (ushort)(cpu.PC + 2),
                 _ => throw new ArgumentOutOfRangeException(nameof(AddressingMode), AddressingMode, null),
             };
         }

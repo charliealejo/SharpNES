@@ -4,13 +4,13 @@ namespace Ricoh6502.Commands
     {
         public ASL(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            byte value = processor.GetValue(AddressingMode, D1, D2);
+            byte value = cpu.GetValue(AddressingMode, D1, D2);
             byte result = (byte)(value << 1);
-            processor.SetValue(AddressingMode, D1, D2, result);
-            processor.Status.SetZeroAndNegativeFlags(result);
-            processor.Status.CarryFlag = (value & 0x80) != 0;
+            cpu.SetValue(AddressingMode, D1, D2, result);
+            cpu.Status.SetZeroAndNegativeFlags(result);
+            cpu.Status.CarryFlag = (value & 0x80) != 0;
         }
     }
 }

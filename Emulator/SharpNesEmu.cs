@@ -1,8 +1,8 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Threading;
 using Cartridge;
 using Logger;
+using NESPPU;
 using Ricoh6502;
 
 namespace Emulator
@@ -10,30 +10,26 @@ namespace Emulator
     public class SharpNesEmu
     {
         private bool _debugMode;
-        private readonly Processor _cpu;
+        private ulong _frameCount;
+        private readonly CPU _cpu;
+        private readonly PPU _ppu;
         private readonly ushort _startAddress;
-        private readonly double _cpuCycleTimeInNanoSeconds;
+        private readonly double _clockCycleTimeInNanoSeconds;
 
         public SharpNesEmu(
             string romPath,
-            SystemVersion version = SystemVersion.NTSC,
             bool debug = false,
             ushort startAddress = 0)
         {
             _debugMode = debug;
 
-            _cpu = new Processor(version, debug ? new NesLogger() : null);
+            _cpu = new CPU(debug ? new NesLogger() : null);
+            _ppu = new PPU();
             Loader.LoadCartridge(romPath, _cpu.Memory);
             _startAddress = startAddress;
 
-            var cpuFrequency = version switch
-            {
-                SystemVersion.NTSC => 1_789_773,
-                SystemVersion.PAL => 1_662_607,
-                SystemVersion.Dendy => 1_773_448,
-                _ => throw new ArgumentOutOfRangeException(nameof(version), version, null)
-            };
-            _cpuCycleTimeInNanoSeconds = 1e9 / cpuFrequency;
+            _clockCycleTimeInNanoSeconds = 1e9 / 1_789_773 / 3;
+            _frameCount = 0;
         }
 
         public void Run()
@@ -51,7 +47,11 @@ namespace Emulator
             {
                 clock.Restart();
 
-                executing = _cpu.Clock();
+                _ppu.Clock();
+                if (_frameCount % 3 == 0)
+                {
+                    executing = _cpu.Clock();
+                }
 
                 if (!_debugMode)
                 {
@@ -59,10 +59,9 @@ namespace Emulator
                     do
                     {
                         spinWait.SpinOnce();
-                    } while (clock.Elapsed.TotalNanoseconds < _cpuCycleTimeInNanoSeconds);
+                    } while (clock.Elapsed.TotalNanoseconds < _clockCycleTimeInNanoSeconds);
                 }
             }
-
         }
     }
 }

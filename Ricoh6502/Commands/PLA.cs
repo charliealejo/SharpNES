@@ -4,10 +4,10 @@ namespace Ricoh6502.Commands
     {
         public PLA() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.Acc = processor.PopStack();
-            processor.Status.SetZeroAndNegativeFlags(processor.Acc);
+            cpu.Acc = cpu.PopStack();
+            cpu.Status.SetZeroAndNegativeFlags(cpu.Acc);
         }
     }
 }

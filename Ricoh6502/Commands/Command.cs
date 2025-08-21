@@ -10,26 +10,26 @@ namespace Ricoh6502.Commands
         /// <summary>
         /// Executes the command using the specified processor.
         /// </summary>
-        /// <param name="processor">Instance of the processor</param>
+        /// <param name="cpu">Instance of the processor</param>
         /// <returns>The number of cycles taken to execute the command</returns>
-        public virtual byte Execute(Processor processor)
+        public virtual byte Execute(CPU cpu)
         {
-            ExecuteInternal(processor);
-            var nextInstructionAddress = GetNextInstructionAddress(processor);
+            ExecuteInternal(cpu);
+            var nextInstructionAddress = GetNextInstructionAddress(cpu);
             var cycles = GetInstructionCycleCount();
             if (PageCrossed)
             {
                 cycles += 1;
             }
-            processor.PC = nextInstructionAddress;
+            cpu.PC = nextInstructionAddress;
             return cycles;
         }
 
         /// <summary>
         /// Executes the command's internal logic.
         /// </summary>
-        /// <param name="processor">Instance of the processor</param>
-        protected abstract void ExecuteInternal(Processor processor);
+        /// <param name="cpu">Instance of the processor</param>
+        protected abstract void ExecuteInternal(CPU cpu);
 
         /// <summary>
         /// Gets the number of CPU cycles required to execute the instruction.
@@ -41,7 +41,7 @@ namespace Ricoh6502.Commands
         /// Gets the address of the next instruction to be executed.
         /// </summary>
         /// <returns>The address of the next instruction.</returns>
-        protected abstract ushort GetNextInstructionAddress(Processor processor);
+        protected abstract ushort GetNextInstructionAddress(CPU cpu);
 
         /// <summary>
         /// Checks if the instruction crosses a page boundary.

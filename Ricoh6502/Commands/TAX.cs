@@ -4,10 +4,10 @@ namespace Ricoh6502.Commands
     {
         public TAX() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.X = processor.Acc;
-            processor.Status.SetZeroAndNegativeFlags(processor.X);
+            cpu.X = cpu.Acc;
+            cpu.Status.SetZeroAndNegativeFlags(cpu.X);
         }
     }
 }

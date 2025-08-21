@@ -4,9 +4,9 @@ namespace Ricoh6502.Commands
     {
         public PHA() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.PushStack(processor.Acc);
+            cpu.PushStack(cpu.Acc);
         }
     }
 }

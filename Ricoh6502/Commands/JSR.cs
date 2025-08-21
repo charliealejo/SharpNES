@@ -8,12 +8,12 @@ namespace Ricoh6502.Commands
             D2 = d2;
         }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            var returnAddress = (ushort)(processor.PC + 2);
-            processor.PushStack((byte)(returnAddress >> 8));
-            processor.PushStack((byte)returnAddress);
-            processor.PC = BitConverter.ToUInt16([D1, D2], 0);
+            var returnAddress = (ushort)(cpu.PC + 2);
+            cpu.PushStack((byte)(returnAddress >> 8));
+            cpu.PushStack((byte)returnAddress);
+            cpu.PC = BitConverter.ToUInt16([D1, D2], 0);
         }
 
         protected override byte GetInstructionCycleCount()
@@ -21,7 +21,7 @@ namespace Ricoh6502.Commands
             return 6;
         }
 
-        protected override ushort GetNextInstructionAddress(Processor processor)
+        protected override ushort GetNextInstructionAddress(CPU processor)
         {
             return processor.PC;
         }

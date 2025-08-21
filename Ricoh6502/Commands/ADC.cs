@@ -4,16 +4,16 @@ namespace Ricoh6502.Commands
     {
         public ADC(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            byte prevAcc = processor.Acc;
-            byte value = processor.GetValue(AddressingMode, D1, D2);
-            byte carry = processor.Status.CarryFlag ? (byte)1 : (byte)0;
-            var result = processor.Acc + value + carry;
-            processor.Acc = (byte)(result & 0xFF);
-            processor.Status.CarryFlag = result > 0xFF;
-            processor.Status.OverflowFlag = ((processor.Acc ^ prevAcc) & (processor.Acc ^ value) & 0x80) != 0;
-            processor.Status.SetZeroAndNegativeFlags(processor.Acc);
+            byte prevAcc = cpu.Acc;
+            byte value = cpu.GetValue(AddressingMode, D1, D2);
+            byte carry = cpu.Status.CarryFlag ? (byte)1 : (byte)0;
+            var result = cpu.Acc + value + carry;
+            cpu.Acc = (byte)(result & 0xFF);
+            cpu.Status.CarryFlag = result > 0xFF;
+            cpu.Status.OverflowFlag = ((cpu.Acc ^ prevAcc) & (cpu.Acc ^ value) & 0x80) != 0;
+            cpu.Status.SetZeroAndNegativeFlags(cpu.Acc);
         }
     }
 }

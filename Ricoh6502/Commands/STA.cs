@@ -4,9 +4,9 @@ namespace Ricoh6502.Commands
     {
         public STA(AddressingMode addressingMode, byte d1, byte d2) : base(addressingMode, d1, d2) { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.SetValue(AddressingMode, D1, D2, processor.Acc);
+            cpu.SetValue(AddressingMode, D1, D2, cpu.Acc);
         }
     }
 }

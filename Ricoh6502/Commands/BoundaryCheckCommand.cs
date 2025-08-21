@@ -9,12 +9,12 @@ namespace Ricoh6502.Commands
             D2 = d2;
         }
 
-        public override byte Execute(Processor processor)
+        public override byte Execute(CPU cpu)
         {
             PageCrossed = CheckForPageBoundaryCrossing(
-                processor.GetBaseAddress(AddressingMode, D1, D2),
-                processor.GetEffectiveAddress(AddressingMode, D1, D2));
-            return base.Execute(processor);
+                cpu.GetBaseAddress(AddressingMode, D1, D2),
+                cpu.GetEffectiveAddress(AddressingMode, D1, D2));
+            return base.Execute(cpu);
         }
 
         protected override byte GetInstructionCycleCount()
@@ -35,20 +35,20 @@ namespace Ricoh6502.Commands
             };
         }
 
-        protected override ushort GetNextInstructionAddress(Processor processor)
+        protected override ushort GetNextInstructionAddress(CPU cpu)
         {
             return AddressingMode switch
             {
-                AddressingMode.Implied => (ushort)(processor.PC + 1),
-                AddressingMode.Immediate => (ushort)(processor.PC + 2),
-                AddressingMode.ZeroPage => (ushort)(processor.PC + 2),
-                AddressingMode.ZeroPageX => (ushort)(processor.PC + 2),
-                AddressingMode.ZeroPageY => (ushort)(processor.PC + 2),
-                AddressingMode.Absolute => (ushort)(processor.PC + 3),
-                AddressingMode.AbsoluteX => (ushort)(processor.PC + 3),
-                AddressingMode.AbsoluteY => (ushort)(processor.PC + 3),
-                AddressingMode.IndirectX => (ushort)(processor.PC + 2),
-                AddressingMode.IndirectY => (ushort)(processor.PC + 2),
+                AddressingMode.Implied => (ushort)(cpu.PC + 1),
+                AddressingMode.Immediate => (ushort)(cpu.PC + 2),
+                AddressingMode.ZeroPage => (ushort)(cpu.PC + 2),
+                AddressingMode.ZeroPageX => (ushort)(cpu.PC + 2),
+                AddressingMode.ZeroPageY => (ushort)(cpu.PC + 2),
+                AddressingMode.Absolute => (ushort)(cpu.PC + 3),
+                AddressingMode.AbsoluteX => (ushort)(cpu.PC + 3),
+                AddressingMode.AbsoluteY => (ushort)(cpu.PC + 3),
+                AddressingMode.IndirectX => (ushort)(cpu.PC + 2),
+                AddressingMode.IndirectY => (ushort)(cpu.PC + 2),
                 _ => throw new ArgumentOutOfRangeException(nameof(AddressingMode), AddressingMode, null)
             };
         }

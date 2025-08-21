@@ -7,13 +7,13 @@ namespace Ricoh6502.Commands
         {
         }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            var statusByte = processor.PopStack();
-            processor.Status.SetStatus(statusByte);
-            var returnAddressLow = processor.PopStack();
-            var returnAddressHigh = processor.PopStack();
-            processor.PC = (ushort)((returnAddressHigh << 8) | returnAddressLow);
+            var statusByte = cpu.PopStack();
+            cpu.Status.SetStatus(statusByte);
+            var returnAddressLow = cpu.PopStack();
+            var returnAddressHigh = cpu.PopStack();
+            cpu.PC = (ushort)((returnAddressHigh << 8) | returnAddressLow);
         }
 
         protected override byte GetInstructionCycleCount()
@@ -21,9 +21,9 @@ namespace Ricoh6502.Commands
             return 6;
         }
 
-        protected override ushort GetNextInstructionAddress(Processor processor)
+        protected override ushort GetNextInstructionAddress(CPU cpu)
         {
-            return processor.PC;
+            return cpu.PC;
         }
 
         protected override bool CheckForPageBoundaryCrossing(ushort currentInstructionAddress, ushort nextInstructionAddress)

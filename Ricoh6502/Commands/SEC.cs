@@ -6,9 +6,9 @@ namespace Ricoh6502.Commands
         {
         }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.Status.CarryFlag = true;
+            cpu.Status.CarryFlag = true;
         }
     }
 }

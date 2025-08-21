@@ -1,10 +1,9 @@
-﻿using System.Diagnostics;
-using Logger;
+﻿using Logger;
 using Ricoh6502.Commands;
 
 namespace Ricoh6502
 {
-    public class Processor
+    public class CPU
     {
         private readonly NesLogger? _logger;
 
@@ -16,7 +15,7 @@ namespace Ricoh6502
 
         private uint _nextInstructionCycle;
 
-        public Processor(SystemVersion version, NesLogger? logger = null)
+        public CPU(NesLogger? logger = null)
         {
             _interrupt = false;
             _nonMaskableInterrupt = false;

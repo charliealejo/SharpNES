@@ -9,9 +9,9 @@ namespace Ricoh6502.Commands
             return 2;
         }
 
-        protected override ushort GetNextInstructionAddress(Processor processor)
+        protected override ushort GetNextInstructionAddress(CPU cpu)
         {
-            return (ushort)(processor.PC + 1);
+            return (ushort)(cpu.PC + 1);
         }
 
         protected override bool CheckForPageBoundaryCrossing(ushort currentInstructionAddress, ushort nextInstructionAddress)

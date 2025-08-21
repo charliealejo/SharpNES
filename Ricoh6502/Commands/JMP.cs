@@ -8,16 +8,16 @@ namespace Ricoh6502.Commands
             D2 = d2;
         }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
             var address = BitConverter.ToUInt16([D1, D2], 0);
-            processor.PC = AddressingMode == AddressingMode.Absolute
+            cpu.PC = AddressingMode == AddressingMode.Absolute
                 ? address
                 : BitConverter.ToUInt16(
-                    [processor.Memory[address],
+                    [cpu.Memory[address],
                      (address & 0x00FF) == 0xFF
-                        ? processor.Memory[address & 0xFF00]
-                        : processor.Memory[address + 1]], 0);
+                        ? cpu.Memory[address & 0xFF00]
+                        : cpu.Memory[address + 1]], 0);
         }
 
         protected override byte GetInstructionCycleCount()
@@ -25,9 +25,9 @@ namespace Ricoh6502.Commands
             return AddressingMode == AddressingMode.Absolute ? (byte)3 : (byte)5;
         }
 
-        protected override ushort GetNextInstructionAddress(Processor processor)
+        protected override ushort GetNextInstructionAddress(CPU cpu)
         {
-            return processor.PC;
+            return cpu.PC;
         }
 
         protected override bool CheckForPageBoundaryCrossing(ushort currentInstructionAddress, ushort nextInstructionAddress)

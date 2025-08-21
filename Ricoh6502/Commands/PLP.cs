@@ -4,9 +4,9 @@ namespace Ricoh6502.Commands
     {
         public PLP() : base() { }
 
-        protected override void ExecuteInternal(Processor processor)
+        protected override void ExecuteInternal(CPU cpu)
         {
-            processor.Status.SetStatus(processor.PopStack());
+            cpu.Status.SetStatus(cpu.PopStack());
         }
     }
 }
