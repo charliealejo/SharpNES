@@ -1,28 +1,23 @@
-﻿using Logger;
-using Ricoh6502.Commands;
+﻿using Ricoh6502.Commands;
 
 namespace Ricoh6502
 {
     public class CPU
     {
-        private readonly NesLogger? _logger;
-
         private bool _interrupt;
 
         private bool _nonMaskableInterrupt;
 
-        private uint _cycles;
-
         private uint _nextInstructionCycle;
+
+        public uint Cycles { get; private set; }
 
         public event EventHandler<MemoryAccessEventArgs>? PPURegisterAccessed;
 
-        public CPU(NesLogger? logger = null)
+        public CPU()
         {
             _interrupt = false;
             _nonMaskableInterrupt = false;
-
-            _logger = logger;
         }
 
         /// <summary>
@@ -38,7 +33,7 @@ namespace Ricoh6502
         /// <summary>
         /// Gets or sets the stack pointer value.
         /// </summary>
-        public byte SP { get; set; } = 0xFD;
+        public byte SP { get; set; } = 0;
 
         /// <summary>
         /// Gets or sets the accumulated value as an 8-bit unsigned integer.
@@ -66,9 +61,9 @@ namespace Ricoh6502
         /// <returns>true if the CPU is still executing, false if it has halted</returns>
         public bool Clock()
         {
-            if (_cycles != _nextInstructionCycle)
+            if (!IsCycleExecutingCommand())
             {
-                _cycles++;
+                Cycles++;
                 return true;
             }
 
@@ -92,12 +87,6 @@ namespace Ricoh6502
                 command = CommandFactory.CreateCommand(opcode, d1, d2);
             }
 
-            // Debug logging before execution
-            if (_logger != null)
-            {
-                WriteLog(opcode, d1, d2, command);
-            }
-
             // Check for break command
             if (command is BRK)
             {
@@ -117,8 +106,13 @@ namespace Ricoh6502
                 _nonMaskableInterrupt = false;
             }
 
-            _cycles++;
+            Cycles++;
             return true;
+        }
+
+        public bool IsCycleExecutingCommand()
+        {
+            return Cycles == _nextInstructionCycle;
         }
 
         public void IRQ()
@@ -228,9 +222,9 @@ namespace Ricoh6502
         public void Reset()
         {
             SetPCWithInterruptVector(0xFFFC);
-            SP = SP -= 3;
+            SP -= 3;
             Status.InterruptDisable = true;
-            _cycles = 7;
+            Cycles = 0;
             _nextInstructionCycle = 7;
         }
 
@@ -241,40 +235,6 @@ namespace Ricoh6502
                      (BitConverter.ToUInt16([d1, d2], 0) & 0x00FF) == 0xFF
                         ? Memory[BitConverter.ToUInt16([d1, d2], 0) & 0xFF00]
                         : Memory[BitConverter.ToUInt16([d1, d2], 0) + 1]], 0);
-        }
-
-        private void WriteLog(byte opcode, byte d1, byte d2, Command command)
-        {
-            var addMode = command.AddressingMode;
-            string b1 = addMode == AddressingMode.Implied ? "  " : $"{d1:X2}";
-            string b2 = new[] { AddressingMode.Absolute, AddressingMode.AbsoluteX, AddressingMode.AbsoluteY, AddressingMode.Indirect }.Contains(addMode) ? $"{d2:X2}" : "  ";
-            string logLine = $"{PC:X4}  {opcode:X2} {b1} {b2}  {command.GetType().Name} {ParseAddress(d1, d2, addMode),-26}  A:{Acc:X2} X:{X:X2} Y:{Y:X2} P:{Status.GetStatus():X2} SP:{SP:X2} CYC:{_cycles}";
-            _logger!.Log(logLine);
-        }
-
-        private string ParseAddress(byte d1, byte d2, AddressingMode addressingMode)
-        {
-            return addressingMode switch
-            {
-                AddressingMode.Implied => "",
-                AddressingMode.Accumulator => "",
-                AddressingMode.Immediate => $"#${d1:X2}",
-                AddressingMode.ZeroPage => $"${d1:X2} = {Memory[d1]:X2}",
-                AddressingMode.ZeroPageX => $"${d1:X2},X",
-                AddressingMode.ZeroPageY => $"${d1:X2},Y",
-                AddressingMode.Relative => $"${PC + (sbyte)d1:X2}",
-                AddressingMode.Absolute => $"${BitConverter.ToUInt16([d1, d2], 0):X4} = {Memory[BitConverter.ToUInt16([d1, d2], 0)]:X2}",
-                AddressingMode.AbsoluteX => $"${BitConverter.ToUInt16([d1, d2], 0):X4},X",
-                AddressingMode.AbsoluteY => $"${BitConverter.ToUInt16([d1, d2], 0):X4},Y",
-                AddressingMode.Indirect => $"(${BitConverter.ToUInt16([d1, d2], 0):X4}) = {BitConverter.ToUInt16(
-                    [Memory[BitConverter.ToUInt16([d1, d2], 0)],
-                     (BitConverter.ToUInt16([d1, d2], 0) & 0x00FF) == 0xFF
-                        ? Memory[BitConverter.ToUInt16([d1, d2], 0) & 0xFF00]
-                        : Memory[BitConverter.ToUInt16([d1, d2], 0) + 1]], 0):X4}",
-                AddressingMode.IndirectX => $"(${d1:X2},X)",
-                AddressingMode.IndirectY => $"(${d1:X2}),Y = {BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0):X4} @ {(ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y):X4} = {Memory[(ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y)]:X2}",
-                _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
-            };
         }
     }
 }

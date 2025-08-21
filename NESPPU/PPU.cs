@@ -1,10 +1,15 @@
-﻿using System;
-
-namespace NESPPU
+﻿namespace NESPPU
 {
     public class PPU
     {
+        private const int ScanLines = 262;
+        private const int Dots = 341;
+
         private byte[] _OAM = new byte[0x100];
+
+        private ulong _cycle;
+        public int ScanLine { get; private set; }
+        public int Dot { get; private set; }
 
         private readonly uint[] _palette = {
             0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000, 0x881400,
@@ -21,9 +26,28 @@ namespace NESPPU
 
         public byte[] Memory { get; set; } = new byte[0x4000];
 
+        public void Reset()
+        {
+            _cycle = 0;
+            ScanLine = 0;
+            Dot = 0;
+        }
+
         public void Clock()
         {
-            // Execute PPU clock cycle
+            _cycle++;
+            Dot++;
+
+            if (Dot >= Dots)
+            {
+                Dot = 0;
+                ScanLine++;
+            }
+
+            if (ScanLine >= ScanLines)
+            {
+                ScanLine = 0;
+            }
         }
     }
 }

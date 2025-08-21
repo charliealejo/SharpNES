@@ -1,4 +1,3 @@
-using System;
 using Ricoh6502;
 
 namespace NESPPU
