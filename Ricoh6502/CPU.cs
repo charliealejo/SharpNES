@@ -163,65 +163,38 @@ namespace Ricoh6502
 
         public byte GetValue(AddressingMode addressingMode, byte d1, byte d2)
         {
-            return addressingMode switch
+            if (addressingMode == AddressingMode.Immediate)
             {
-                AddressingMode.Immediate => d1,
-                AddressingMode.Accumulator => Acc,
-                AddressingMode.ZeroPage => Memory[d1],
-                AddressingMode.ZeroPageX => Memory[(byte)(d1 + X)],
-                AddressingMode.ZeroPageY => Memory[(byte)(d1 + Y)],
-                AddressingMode.Relative => Memory[(byte)(PC + (sbyte)d1)],
-                AddressingMode.Absolute => Memory[BitConverter.ToUInt16([d1, d2], 0)],
-                AddressingMode.AbsoluteX => Memory[(ushort)(BitConverter.ToUInt16([d1, d2], 0) + X)],
-                AddressingMode.AbsoluteY => Memory[(ushort)(BitConverter.ToUInt16([d1, d2], 0) + Y)],
-                AddressingMode.Indirect => Memory[BitConverter.ToUInt16(
-                    [Memory[BitConverter.ToUInt16([d1, d2], 0)],
-                     (BitConverter.ToUInt16([d1, d2], 0) & 0x00FF) == 0xFF
-                        ? Memory[BitConverter.ToUInt16([d1, d2], 0) & 0xFF00]
-                        : Memory[BitConverter.ToUInt16([d1, d2], 0) + 1]], 0)],
-                AddressingMode.IndirectX => Memory[BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0)],
-                AddressingMode.IndirectY => Memory[(ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y)],
-                _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
-            };
+                return d1;
+            }
+            else if (addressingMode == AddressingMode.Accumulator)
+            {
+                return Acc;
+            }
+
+            var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
+            if (addressingMode == AddressingMode.Indirect)
+            {
+                memoryAddress = GetIndirectMemoryAddress(d1, d2);
+            }
+
+            return Memory[memoryAddress];
         }
 
         public void SetValue(AddressingMode addressingMode, byte d1, byte d2, byte value)
         {
-            switch (addressingMode)
+            if (addressingMode == AddressingMode.Accumulator)
             {
-                case AddressingMode.Accumulator:
-                    Acc = value;
-                    break;
-                case AddressingMode.ZeroPage:
-                    Memory[d1] = value;
-                    break;
-                case AddressingMode.ZeroPageX:
-                    Memory[(byte)(d1 + X)] = value;
-                    break;
-                case AddressingMode.ZeroPageY:
-                    Memory[(byte)(d1 + Y)] = value;
-                    break;
-                case AddressingMode.Relative:
-                    Memory[(byte)(PC + (sbyte)d1)] = value;
-                    break;
-                case AddressingMode.Absolute:
-                    Memory[BitConverter.ToUInt16([d1, d2], 0)] = value;
-                    break;
-                case AddressingMode.AbsoluteX:
-                    Memory[BitConverter.ToUInt16([d1, d2], 0) + X] = value;
-                    break;
-                case AddressingMode.AbsoluteY:
-                    Memory[BitConverter.ToUInt16([d1, d2], 0) + Y] = value;
-                    break;
-                case AddressingMode.IndirectX:
-                    Memory[BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0)] = value;
-                    break;
-                case AddressingMode.IndirectY:
-                    Memory[(ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y)] = value;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null);
+                Acc = value;
             }
+
+            var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
+            if (addressingMode == AddressingMode.Indirect)
+            {
+                memoryAddress = GetIndirectMemoryAddress(d1, d2);
+            }
+
+            Memory[memoryAddress] = value;
         }
 
         public void SetPCWithInterruptVector(ushort irqAddress)
@@ -248,6 +221,15 @@ namespace Ricoh6502
             Status.InterruptDisable = true;
             _cycles = 7;
             _nextInstructionCycle = 7;
+        }
+
+        private ushort GetIndirectMemoryAddress(byte d1, byte d2)
+        {
+            return BitConverter.ToUInt16(
+                [Memory[BitConverter.ToUInt16([d1, d2], 0)],
+                     (BitConverter.ToUInt16([d1, d2], 0) & 0x00FF) == 0xFF
+                        ? Memory[BitConverter.ToUInt16([d1, d2], 0) & 0xFF00]
+                        : Memory[BitConverter.ToUInt16([d1, d2], 0) + 1]], 0);
         }
 
         private void WriteLog(byte opcode, byte d1, byte d2, Command command)
