@@ -4,11 +4,13 @@ public abstract class MapperBase
 {
     protected readonly Cartridge _cartridge;
     protected readonly byte[] _cpuMemory;
+    protected readonly byte[] _ppuMemory;
 
-    protected MapperBase(Cartridge cartridge, byte[] cpuMemory)
+    protected MapperBase(Cartridge cartridge, byte[] cpuMemory, byte[] ppuMemory)
     {
         _cartridge = cartridge ?? throw new ArgumentNullException(nameof(cartridge));
         _cpuMemory = cpuMemory ?? throw new ArgumentNullException(nameof(cpuMemory));
+        _ppuMemory = ppuMemory ?? throw new ArgumentNullException(nameof(ppuMemory));
     }
 
     public void Initialize()

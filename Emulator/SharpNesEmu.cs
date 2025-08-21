@@ -25,7 +25,7 @@ namespace Emulator
 
             _cpu = new CPU(debug ? new NesLogger() : null);
             _ppu = new PPU();
-            Loader.LoadCartridge(romPath, _cpu.Memory);
+            Loader.LoadCartridge(romPath, _cpu.Memory, _ppu.Memory);
             _startAddress = startAddress;
 
             _clockCycleTimeInNanoSeconds = 1e9 / 1_789_773 / 3;
