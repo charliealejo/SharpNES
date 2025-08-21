@@ -4,8 +4,6 @@ namespace NESPPU
 {
     public class PPU
     {
-        private Registers _registers = new Registers();
-
         private byte[] _OAM = new byte[0x100];
 
         private readonly uint[] _palette = {
@@ -18,6 +16,8 @@ namespace NESPPU
             0xFCFCFC, 0xA4E4FC, 0xB8B8F8, 0xD8B8F8, 0xF8B8F8, 0xF8A4C0, 0xF0D0B0, 0xFCE0A8,
             0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000, 0x000000
         };
+
+        public Registers Registers = new Registers();
 
         public byte[] Memory { get; set; } = new byte[0x4000];
 

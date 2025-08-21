@@ -29,6 +29,9 @@ namespace Emulator
             Loader.LoadCartridge(romPath, CPU.Memory, PPU.Memory);
             _startAddress = startAddress;
 
+            var memoryBus = new MemoryBus(CPU, PPU);
+            memoryBus.Initialize();
+
             _clockCycleTimeInNanoSeconds = 1e9 / 1_789_773 / 3;
             _frameCount = 0;
         }

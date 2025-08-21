@@ -15,6 +15,8 @@ namespace Ricoh6502
 
         private uint _nextInstructionCycle;
 
+        public event EventHandler<MemoryAccessEventArgs>? PPURegisterAccessed;
+
         public CPU(NesLogger? logger = null)
         {
             _interrupt = false;
@@ -192,6 +194,15 @@ namespace Ricoh6502
             if (addressingMode == AddressingMode.Indirect)
             {
                 memoryAddress = GetIndirectMemoryAddress(d1, d2);
+            }
+
+            if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
+            {
+                PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs(memoryAddress % 8, value));
+            }
+            if (memoryAddress == 0x4014)
+            {
+                PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs(0x14, value));
             }
 
             Memory[memoryAddress] = value;
