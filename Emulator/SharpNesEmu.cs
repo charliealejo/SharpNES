@@ -11,10 +11,11 @@ namespace Emulator
     {
         private bool _debugMode;
         private ulong _frameCount;
-        private readonly CPU _cpu;
-        private readonly PPU _ppu;
         private readonly ushort _startAddress;
         private readonly double _clockCycleTimeInNanoSeconds;
+
+        public CPU CPU { get; set; }
+        public PPU PPU { get; set; }
 
         public SharpNesEmu(
             string romPath,
@@ -23,9 +24,9 @@ namespace Emulator
         {
             _debugMode = debug;
 
-            _cpu = new CPU(debug ? new NesLogger() : null);
-            _ppu = new PPU();
-            Loader.LoadCartridge(romPath, _cpu.Memory, _ppu.Memory);
+            CPU = new CPU(debug ? new NesLogger() : null);
+            PPU = new PPU();
+            Loader.LoadCartridge(romPath, CPU.Memory, PPU.Memory);
             _startAddress = startAddress;
 
             _clockCycleTimeInNanoSeconds = 1e9 / 1_789_773 / 3;
@@ -34,10 +35,10 @@ namespace Emulator
 
         public void Run()
         {
-            _cpu.Reset();
+            CPU.Reset();
             if (_startAddress > 0)
             {
-                _cpu.PC = _startAddress;
+                CPU.PC = _startAddress;
             }
 
             var clock = new Stopwatch();
@@ -47,10 +48,10 @@ namespace Emulator
             {
                 clock.Restart();
 
-                _ppu.Clock();
+                PPU.Clock();
                 if (_frameCount % 3 == 0)
                 {
-                    executing = _cpu.Clock();
+                    executing = CPU.Clock();
                 }
 
                 if (!_debugMode)
