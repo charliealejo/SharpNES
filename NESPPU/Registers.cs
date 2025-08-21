@@ -5,6 +5,10 @@ namespace NESPPU
         private bool _verticalScrollSet = false;
         private bool _ppuAddressFirstWrite = true;
 
+        internal byte V { get; set; }
+        internal byte T { get; set; }
+        internal byte X { get; set; }
+
         public byte PPUCTRL // PPU Control Register, CPU address $2000
         {
             set
