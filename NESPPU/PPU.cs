@@ -2,14 +2,13 @@
 {
     public class PPU
     {
-        private const int ScanLines = 262;
-        private const int Dots = 341;
-
-        private byte[] _OAM = new byte[0x100];
-
-        private ulong _cycle;
+        public const int ScanLines = 262;
+        public const int Dots = 341;
         public int ScanLine { get; private set; }
         public int Dot { get; private set; }
+        
+        private byte[] _OAM = new byte[0x100];
+        private ulong _cycle;
 
         private readonly uint[] _palette = {
             0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000, 0x881400,

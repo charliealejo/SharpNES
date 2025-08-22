@@ -9,9 +9,10 @@ namespace Emulator
 {
     public class SharpNesEmu
     {
+        private const double MillisecondsPerFrame = 16.64;
+
         private readonly bool _debugMode;
         private readonly ushort _startAddress;
-        private readonly double _clockCycleTimeInNanoSeconds;
         private readonly NesLogger? _logger;
         private ulong _frameCount;
 
@@ -34,7 +35,6 @@ namespace Emulator
             var memoryBus = new MemoryBus(CPU, PPU);
             memoryBus.Initialize();
 
-            _clockCycleTimeInNanoSeconds = 1e9 / 1_789_773 / 3;
             _frameCount = 0;
         }
 
@@ -48,30 +48,32 @@ namespace Emulator
             PPU.Reset();
 
             var clock = new Stopwatch();
-            var spinWait = new SpinWait();
             var executing = true;
+            var ppuTicksToProcess = PPU.ScanLines * PPU.Dots;
             while (executing)
             {
                 clock.Restart();
 
-                if (_frameCount++ % 3 == 0)
+                for (int i = 0; i < ppuTicksToProcess; i++)
                 {
-                    if (_debugMode && CPU.IsCycleExecutingCommand())
+                    if (_frameCount++ % 3 == 0)
                     {
-                        WriteLog();
+                        if (_debugMode && CPU.IsCycleExecutingCommand())
+                        {
+                            WriteLog();
+                        }
+                        executing = CPU.Clock();
+                        if (!executing)
+                        {
+                            break;
+                        }
                     }
-                    executing = CPU.Clock();
+                    PPU.Clock();
                 }
-                PPU.Clock();
 
-                if (!_debugMode)
-                {
-                    // Wait if needed
-                    do
-                    {
-                        spinWait.SpinOnce();
-                    } while (clock.Elapsed.TotalNanoseconds < _clockCycleTimeInNanoSeconds);
-                }
+                Thread.Sleep(MillisecondsPerFrame > clock.Elapsed.TotalMilliseconds
+                    ? (int)(MillisecondsPerFrame - clock.Elapsed.TotalMilliseconds)
+                    : 0);
             }
         }
 
