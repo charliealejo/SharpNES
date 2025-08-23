@@ -4,12 +4,7 @@
     {
         public const int ScanLines = 262;
         public const int Dots = 341;
-        public int ScanLine { get; private set; }
-        public int Dot { get; private set; }
 
-        public event EventHandler? TriggerNMI;
-
-        private byte[] _OAM = new byte[0x100];
         private ulong _cycle;
 
         private readonly uint[] _palette = [
@@ -24,8 +19,13 @@
         ];
 
         public Registers Registers = new Registers();
+        public int ScanLine { get; private set; }
+        public int Dot { get; private set; }
 
         public byte[] Memory { get; set; } = new byte[0x4000];
+        public byte[] OAM = new byte[0x100];
+
+        public event EventHandler? TriggerNMI;
 
         public void Reset()
         {

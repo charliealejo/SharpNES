@@ -1,4 +1,5 @@
-﻿using Ricoh6502.Commands;
+﻿using System.Net;
+using Ricoh6502.Commands;
 
 namespace Ricoh6502
 {
@@ -8,16 +9,27 @@ namespace Ricoh6502
 
         private bool _nonMaskableInterrupt;
 
+        private bool _executeDMA;
+
+        private uint _dmaCycle;
+
+        private uint _lastDmaCycle;
+
         private uint _nextInstructionCycle;
 
         public uint Cycles { get; private set; }
 
         public event EventHandler<MemoryAccessEventArgs>? PPURegisterAccessed;
 
+        public event EventHandler<MemoryAccessEventArgs>? DMAWrite;
+
         public CPU()
         {
             _interrupt = false;
             _nonMaskableInterrupt = false;
+            _executeDMA = false;
+            _dmaCycle = 0;
+            _lastDmaCycle = 0;
         }
 
         /// <summary>
@@ -64,6 +76,12 @@ namespace Ricoh6502
             if (!IsCycleExecutingCommand())
             {
                 Cycles++;
+                return true;
+            }
+
+            if (_executeDMA)
+            {
+                PerformDMA();
                 return true;
             }
 
@@ -192,7 +210,7 @@ namespace Ricoh6502
 
             if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
             {
-                PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs(memoryAddress % 8, value));
+                PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs((uint)(memoryAddress % 8), value));
                 for (ushort addr = 0x2000; addr <= 0x3FFF; addr += 8)
                 {
                     Memory[addr] = value;
@@ -201,6 +219,7 @@ namespace Ricoh6502
             if (memoryAddress == 0x4014)
             {
                 PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs(0x14, value));
+                _executeDMA = true;
             }
 
             Memory[memoryAddress] = value;
@@ -230,6 +249,42 @@ namespace Ricoh6502
             Status.InterruptDisable = true;
             Cycles = 0;
             _nextInstructionCycle = 7;
+            _executeDMA = false;
+            _dmaCycle = 0;
+            _lastDmaCycle = 0;
+        }
+
+        private void PerformDMA()
+        {
+            if (_lastDmaCycle == 0)
+            {
+                if (Cycles % 2 == 0)
+                {
+                    _lastDmaCycle = 514;
+                }
+                else
+                {
+                    _lastDmaCycle = 513;
+                }
+            }
+
+            if (_dmaCycle >= 512)
+            {
+                _nextInstructionCycle += _lastDmaCycle - _dmaCycle;
+                _lastDmaCycle = 0;
+                _dmaCycle = 0;
+                _executeDMA = false;
+            }
+            else if (_dmaCycle % 2 == 0)
+            {
+                var page = Memory[0x4014];
+                uint offset = _dmaCycle / 2;
+                DMAWrite?.Invoke(this, new MemoryAccessEventArgs(offset, Memory[(ushort)(page * 0x100 + offset)]));
+                _nextInstructionCycle += 2;
+                _dmaCycle++;
+            }
+
+            Cycles++;
         }
 
         private ushort GetIndirectMemoryAddress(byte d1, byte d2)

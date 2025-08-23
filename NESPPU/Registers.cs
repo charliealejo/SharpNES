@@ -59,7 +59,16 @@ namespace NESPPU
             }
         }
         public byte OAMADDR { get; set; } // OAM Address Register, CPU address $2003
-        public byte OAMDATA { get; set; } // OAM Data Register, CPU address $2004
+        private byte _oamData;
+        public byte OAMDATA // OAM Data Register, CPU address $2004
+        {
+            get { return _oamData; }
+            set
+            {
+                _oamData = value;
+                OAMADDR++;
+            }
+        }
         public byte PPUSCROLL // PPU Scroll Register, CPU address $2005
         {
             set

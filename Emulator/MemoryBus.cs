@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Ricoh6502;
 
 namespace NESPPU
@@ -16,6 +17,7 @@ namespace NESPPU
         public void Initialize()
         {
             _cpu.PPURegisterAccessed += OnPPURegisterAccessed;
+            _cpu.DMAWrite += OnDMAWrite;
             _ppu.Registers.PPUStatusChanged += (s, e) =>
             {
                 for (ushort addr = 0x2002; addr <= 0x3FFF; addr += 8)
@@ -61,6 +63,10 @@ namespace NESPPU
                 default:
                     throw new ArgumentOutOfRangeException(nameof(e.Register), "Invalid PPU register");
             }
+        }
+
+        private void OnDMAWrite(object? sender, Ricoh6502.MemoryAccessEventArgs e) {
+            _ppu.OAM[e.Register] = e.Value;
         }
     }
 }
