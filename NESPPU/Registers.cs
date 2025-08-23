@@ -2,12 +2,24 @@ namespace NESPPU
 {
     public class Registers
     {
-        private bool _verticalScrollSet = false;
-        private bool _ppuAddressFirstWrite = true;
-
         internal byte V { get; set; }
         internal byte T { get; set; }
         internal byte X { get; set; }
+        internal byte W { get; set; } = 0;
+
+        public byte OpenBus { get; set; }
+
+        public event EventHandler<byte>? PPUStatusChanged;
+
+        public Registers()
+        {
+            F.PPUStatusChanged += (s, e) =>
+            {
+                var status = OpenBus & 0x1F; // Preserve lower 5 bits of open bus
+                var flags = F.CalculatePPUStatus();
+                PPUSTATUS = (byte)(flags | status);
+            };
+        }
 
         public byte PPUCTRL // PPU Control Register, CPU address $2000
         {
@@ -36,37 +48,48 @@ namespace NESPPU
                 F.EmphasizeBlue = (value & 0x80) != 0;
             }
         }
-        public byte PPUSTATUS { get; } // PPU Status Register, CPU address $2002
+        private byte _ppuStatus;
+        public byte PPUSTATUS
+        {
+            get { return _ppuStatus; }
+            set
+            {
+                _ppuStatus = value;
+                PPUStatusChanged?.Invoke(this, value);
+            }
+        }
         public byte OAMADDR { get; set; } // OAM Address Register, CPU address $2003
         public byte OAMDATA { get; set; } // OAM Data Register, CPU address $2004
         public byte PPUSCROLL // PPU Scroll Register, CPU address $2005
         {
             set
             {
-                if (_verticalScrollSet)
+                if (W == 0)
                 {
-                    F.VerticalScroll = value;
+                    F.HorizontalScroll = value;
+                    W = 1;
                 }
                 else
                 {
-                    F.HorizontalScroll = value;
+                    F.VerticalScroll = value;
+                    W = 0;
                 }
-                _verticalScrollSet = !_verticalScrollSet;
             }
         }
         public byte PPUADDR // PPU Address Register, CPU address $2006
         {
             set
             {
-                if (_ppuAddressFirstWrite)
+                if (W == 0)
                 {
                     F.PPUAddress = (ushort)((value & 0x3F) << 8); // Upper 6 bits
+                    W = 1;
                 }
                 else
                 {
                     F.PPUAddress += value; // Lower 8 bits
+                    W = 0;
                 }
-                _ppuAddressFirstWrite = !_ppuAddressFirstWrite;
             }
         }
         public byte PPUDATA { get; set; } // PPU Data Register, CPU address $2007
@@ -76,6 +99,8 @@ namespace NESPPU
 
         public class Flags
         {
+            public event EventHandler? PPUStatusChanged;
+
             public ushort BaseNametableAddress { get; set; }
             public bool IncrementMode { get; set; } // 0: increment by 1, 1: increment by 32
             public bool SpritePatternTableAddress { get; set; } // 0: $0000, 1: $1000
@@ -92,6 +117,48 @@ namespace NESPPU
             public bool EmphasizeRed { get; set; }
             public bool EmphasizeGreen { get; set; }
             public bool EmphasizeBlue { get; set; }
+
+            private bool _spriteOverflow;
+            public bool SpriteOverflow
+            {
+                get { return _spriteOverflow; }
+                set
+                {
+                    _spriteOverflow = value;
+                    PPUStatusChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+
+            private bool _sprite0Hit;
+            public bool Sprite0Hit
+            {
+                get { return _sprite0Hit; }
+                set
+                {
+                    _sprite0Hit = value;
+                    PPUStatusChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+
+            private bool _vBlank;
+            public bool VBlank
+            {
+                get { return _vBlank; }
+                set
+                {
+                    _vBlank = value;
+                    PPUStatusChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+
+            public byte CalculatePPUStatus()
+            {
+                byte status = 0;
+                if (SpriteOverflow) status |= 0x20;
+                if (Sprite0Hit) status |= 0x40;
+                if (VBlank) status |= 0x80;
+                return status;
+            }
 
             public byte HorizontalScroll { get; set; }
             public byte VerticalScroll { get; set; }

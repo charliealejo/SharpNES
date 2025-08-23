@@ -16,10 +16,18 @@ namespace NESPPU
         public void Initialize()
         {
             _cpu.PPURegisterAccessed += OnPPURegisterAccessed;
+            _ppu.Registers.PPUStatusChanged += (s, e) =>
+            {
+                for (ushort addr = 0x2002; addr <= 0x3FFF; addr += 8)
+                {
+                    _cpu.Memory[addr] = e;
+                }
+            };
         }
 
         private void OnPPURegisterAccessed(object? sender, Ricoh6502.MemoryAccessEventArgs e)
         {
+            _ppu.Registers.OpenBus = e.Value;
             switch (e.Register)
             {
                 case 0:
