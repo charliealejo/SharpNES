@@ -258,14 +258,7 @@ namespace Ricoh6502
         {
             if (_lastDmaCycle == 0)
             {
-                if (Cycles % 2 == 0)
-                {
-                    _lastDmaCycle = 514;
-                }
-                else
-                {
-                    _lastDmaCycle = 513;
-                }
+                _lastDmaCycle = Cycles % 2 == 0 ? 514 : (uint)513;
             }
 
             if (_dmaCycle >= 512)

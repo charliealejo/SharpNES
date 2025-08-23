@@ -2,6 +2,8 @@ namespace NESPPU
 {
     public class Registers
     {
+        private PPU _ppu;
+
         internal byte V { get; set; }
         internal byte T { get; set; }
         internal byte X { get; set; }
@@ -11,8 +13,9 @@ namespace NESPPU
 
         public event EventHandler<byte>? PPUStatusChanged;
 
-        public Registers()
+        public Registers(PPU ppu)
         {
+            _ppu = ppu;
             F.PPUStatusChanged += (s, e) =>
             {
                 var status = OpenBus & 0x1F; // Preserve lower 5 bits of open bus
@@ -26,7 +29,7 @@ namespace NESPPU
             set
             {
                 F.BaseNametableAddress = (ushort)((value & 0x03) * 0x400);
-                F.IncrementMode = (value & 0x04) != 0;
+                F.IncrementBy32 = (value & 0x04) != 0;
                 F.SpritePatternTableAddress = (value & 0x08) != 0;
                 F.BackgroundPatternTableAddress = (value & 0x10) != 0;
                 F.SpriteSize = (value & 0x20) != 0;
@@ -101,7 +104,14 @@ namespace NESPPU
                 }
             }
         }
-        public byte PPUDATA { get; set; } // PPU Data Register, CPU address $2007
+        public byte PPUDATA // PPU Data Register, CPU address $2007
+        {
+            set
+            {
+                _ppu.Memory[F.PPUAddress] = value;
+                F.PPUAddress += (ushort)(F.IncrementBy32 ? 32 : 1);
+            }
+        }
         public byte OAMDMA { get; set; } // OAM DMA Register, CPU address $4014
 
         public Flags F { get; set; } = new Flags();
@@ -111,7 +121,7 @@ namespace NESPPU
             public event EventHandler? PPUStatusChanged;
 
             public ushort BaseNametableAddress { get; set; }
-            public bool IncrementMode { get; set; } // 0: increment by 1, 1: increment by 32
+            public bool IncrementBy32 { get; set; } // 0: increment by 1, 1: increment by 32
             public bool SpritePatternTableAddress { get; set; } // 0: $0000, 1: $1000
             public bool BackgroundPatternTableAddress { get; set; } // 0: $0000, 1: $1000
             public bool SpriteSize { get; set; } // 0: 8x8, 1: 8x16

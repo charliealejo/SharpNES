@@ -18,7 +18,7 @@
             0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000, 0x000000
         ];
 
-        public Registers Registers = new Registers();
+        public Registers Registers { get; private set; }
         public int ScanLine { get; private set; }
         public int Dot { get; private set; }
 
@@ -26,6 +26,11 @@
         public byte[] OAM = new byte[0x100];
 
         public event EventHandler? TriggerNMI;
+
+        public PPU()
+        {
+            Registers = new Registers(this);
+        }
 
         public void Reset()
         {
