@@ -23,6 +23,10 @@ namespace NESPPU
                     _cpu.Memory[addr] = e;
                 }
             };
+            _ppu.TriggerNMI += (s, e) =>
+            {
+                _cpu.NMI();
+            };
         }
 
         private void OnPPURegisterAccessed(object? sender, Ricoh6502.MemoryAccessEventArgs e)

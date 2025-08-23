@@ -6,11 +6,13 @@
         public const int Dots = 341;
         public int ScanLine { get; private set; }
         public int Dot { get; private set; }
-        
+
+        public event EventHandler? TriggerNMI;
+
         private byte[] _OAM = new byte[0x100];
         private ulong _cycle;
 
-        private readonly uint[] _palette = {
+        private readonly uint[] _palette = [
             0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000, 0x881400,
             0x503000, 0x007800, 0x006800, 0x005800, 0x004058, 0x000000, 0x000000, 0x000000,
             0xBCBCBC, 0x0078F8, 0x0058F8, 0x6844FC, 0xD800CC, 0xE40058, 0xF83800, 0xE45C10,
@@ -19,7 +21,7 @@
             0xF8B800, 0xB8F818, 0x58D854, 0x58F898, 0x00E8D8, 0x787878, 0x000000, 0x000000,
             0xFCFCFC, 0xA4E4FC, 0xB8B8F8, 0xD8B8F8, 0xF8B8F8, 0xF8A4C0, 0xF0D0B0, 0xFCE0A8,
             0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000, 0x000000
-        };
+        ];
 
         public Registers Registers = new Registers();
 
@@ -36,7 +38,12 @@
         {
             _cycle++;
             Dot++;
+            AdvanceDotAndScanLine();
+            UpdateRegistersIfNeeded();
+        }
 
+        private void AdvanceDotAndScanLine()
+        {
             if (Dot >= Dots)
             {
                 Dot = 0;
@@ -46,6 +53,28 @@
             if (ScanLine >= ScanLines)
             {
                 ScanLine = 0;
+            }
+        }
+
+        private void UpdateRegistersIfNeeded()
+        {
+            if (ScanLine == 241 && Dot == 1)
+            {
+                if (Registers.F.NMIEnabled)
+                {
+                    TriggerNMI?.Invoke(this, EventArgs.Empty);
+                }
+                Registers.F.VBlank = true;
+            }
+            if (ScanLine == 261 && Dot == 1)
+            {
+                Registers.F.VBlank = false;
+                Registers.F.Sprite0Hit = false;
+                Registers.F.SpriteOverflow = false;
+            }
+            if ((ScanLine == 261 || ScanLine < 240) && Dot >= 257 && Dot <= 320)
+            {
+                Registers.OAMADDR = 0;
             }
         }
     }
