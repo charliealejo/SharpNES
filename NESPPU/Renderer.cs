@@ -1,4 +1,3 @@
-
 namespace NESPPU
 {
     /// <summary>
@@ -27,6 +26,34 @@ namespace NESPPU
         private const int Width = 256;
         private const int Height = 240;
 
+        // Memory address constants
+        private const ushort PatternTable0Base = 0x0000;
+        private const ushort PatternTable1Base = 0x1000;
+        private const ushort Nametable0Base = 0x2000;
+        private const ushort AttributeTable0Base = 0x23C0;
+        private const ushort UniversalBackgroundColorAddr = 0x3F00;
+        private const ushort BackgroundPaletteBase = 0x3F01;
+        private const ushort SpritePaletteBase = 0x3F11;
+        
+        // Sprite attribute bit masks
+        private const byte SpritePaletteMask = 0x03;
+        private const byte SpritePriorityMask = 0x20;
+        private const byte SpriteHorizontalFlipMask = 0x40;
+        private const byte SpriteVerticalFlipMask = 0x80;
+
+        // Structure for evaluated sprites
+        private struct Sprite
+        {
+            public byte X;
+            public byte Y;
+            public byte TileIndex;
+            public byte Attributes;
+            public bool IsSprite0;
+        }
+
+        private readonly Sprite[] _activeSprites = new Sprite[8];
+        private int _activeSpriteCount = 0;
+
         private readonly uint[] _palette = [
             0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000, 0x881400,
             0x503000, 0x007800, 0x006800, 0x005800, 0x004058, 0x000000, 0x000000, 0x000000,
@@ -52,50 +79,197 @@ namespace NESPPU
         {
             int x = dot - 1;
             int y = scanline;
+
+            // Render background
+            uint backgroundColor = RenderBackgroundPixel(x, y);
+
+            // Render sprites
+            uint spriteColor = RenderSpritePixel(x, y, out bool spritePriority, out bool isSprite0);
+
+            // Combine background and sprite
+            uint finalColor;
+            if (spriteColor != 0) // Sprite is not transparent
+            {
+                if (spritePriority || backgroundColor == 0) // Sprite has priority or background is transparent
+                {
+                    finalColor = spriteColor;
+                }
+                else
+                {
+                    finalColor = backgroundColor;
+                }
+                
+                // Detect sprite 0 hit
+                if (isSprite0 && backgroundColor != 0 && x < 255)
+                {
+                    _ppu.Registers.F.Sprite0Hit = true;
+                }
+            }
+            else
+            {
+                finalColor = backgroundColor;
+            }
+
+            FrameBuffer[y * 256 + x] = (int)finalColor;
+        }
+
+        public void EvaluateSprites(int scanline)
+        {
+            _activeSpriteCount = 0;
+            
+            // Evaluate all sprites in OAM
+            for (int i = 0; i < 64 && _activeSpriteCount < 8; i++)
+            {
+                int oamIndex = i * 4;
+                byte spriteY = _ppu.OAM[oamIndex];
+                byte tileIndex = _ppu.OAM[oamIndex + 1];
+                byte attributes = _ppu.OAM[oamIndex + 2];
+                byte spriteX = _ppu.OAM[oamIndex + 3];
+                
+                int spriteHeight = _ppu.Registers.F.SpriteSize ? 16 : 8;
+                
+                // Check if the sprite is on this scanline
+                if (scanline >= spriteY && scanline < spriteY + spriteHeight)
+                {
+                    _activeSprites[_activeSpriteCount] = new Sprite
+                    {
+                        Y = spriteY,
+                        TileIndex = tileIndex,
+                        Attributes = attributes,
+                        X = spriteX,
+                        IsSprite0 = (i == 0) // The first sprite is sprite 0
+                    };
+                    _activeSpriteCount++;
+                }
+            }
+            
+            // Sprite overflow flag
+            if (_activeSpriteCount >= 8)
+            {
+                _ppu.Registers.F.SpriteOverflow = true;
+            }
+        }
+
+        private uint RenderBackgroundPixel(int x, int y)
+        {
+            if (!_ppu.Registers.F.ShowBackground) return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
+            if (!_ppu.Registers.F.ShowBackgroundLeft && x < 8) return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
+            
+            // Your current background rendering code
             int scrollX = _ppu.Registers.F.HorizontalScroll;
             int scrollY = _ppu.Registers.F.VerticalScroll;
 
-            // Calculate the final pixel position
             int screenX = (x + scrollX) % Width;
             int screenY = (y + scrollY) % Height;
 
-            // Get tile
             int tileX = screenX / 8;
             int tileY = screenY / 8;
-
-            // Calculate offset inside tile
             int tileOffsetX = screenX % 8;
             int tileOffsetY = screenY % 8;
 
-            // Get tile ID from nametable
-            ushort nametableAddr = (ushort)(0x2000 + _ppu.Registers.F.BaseNametableAddress);
+            ushort nametableAddr = (ushort)(Nametable0Base + _ppu.Registers.F.BaseNametableAddress);
             ushort tileAddr = (ushort)(nametableAddr + (tileY * 32) + tileX);
             byte tileId = _ppu.Memory[tileAddr];
 
-            // Get pattern data from tile
-            ushort patternTableBase = (ushort)(_ppu.Registers.F.BackgroundPatternTableAddress ? 0x1000 : 0x0000);
+            ushort patternTableBase = (ushort)(_ppu.Registers.F.BackgroundPatternTableAddress ? PatternTable1Base : PatternTable0Base);
             ushort patternAddr = (ushort)(patternTableBase + (tileId * 16) + tileOffsetY);
 
-            byte lowByte = _ppu.Memory[patternAddr];      // Bit plane 0
-            byte highByte = _ppu.Memory[patternAddr + 8]; // Bit plane 1
+            byte lowByte = _ppu.Memory[patternAddr];
+            byte highByte = _ppu.Memory[patternAddr + 8];
 
-            // Extract the specific pixel (bit 7-tileOffsetX because pixels go from left to right)
             int bitIndex = 7 - tileOffsetX;
             int pixel = ((lowByte >> bitIndex) & 1) | (((highByte >> bitIndex) & 1) << 1);
 
-            // Get palette index
             int paletteIndex = GetPaletteIndex(tileX, tileY);
-            
-            // Calculate the final color
-            uint color = GetColor(pixel, paletteIndex);
+            return GetBackgroundColor(pixel, paletteIndex);
+        }
 
-            // Write to framebuffer
-            FrameBuffer[y * 256 + x] = (int)color;
+        private uint RenderSpritePixel(int x, int y, out bool priority, out bool isSprite0)
+        {
+            priority = false;
+            isSprite0 = false;
+
+            if (!_ppu.Registers.F.ShowSprites) return 0;
+            if (!_ppu.Registers.F.ShowSpritesLeft && x < 8) return 0;
+
+            // Search for sprites at this position (from highest to lowest priority)
+            for (int i = _activeSpriteCount - 1; i >= 0; i--)
+            {
+                var sprite = _activeSprites[i];
+                
+                // Check if the pixel is inside the sprite
+                int spriteHeight = _ppu.Registers.F.SpriteSize ? 16 : 8;
+                if (x >= sprite.X && x < sprite.X + 8 && 
+                    y >= sprite.Y && y < sprite.Y + spriteHeight)
+                {
+                    int spriteX = x - sprite.X;
+                    int spriteY = y - sprite.Y;
+                    
+                    // Horizontal flip
+                    if ((sprite.Attributes & SpriteHorizontalFlipMask) != 0)
+                    {
+                        spriteX = 7 - spriteX;
+                    }
+                    
+                    // Vertical flip
+                    if ((sprite.Attributes & SpriteVerticalFlipMask) != 0)
+                    {
+                        spriteY = (spriteHeight - 1) - spriteY;
+                    }
+                    
+                    uint color = GetSpritePixelColor(sprite, spriteX, spriteY);
+                    if (color != 0) // Not transparent
+                    {
+                        priority = (sprite.Attributes & SpritePriorityMask) == 0; // Bit 5 = 0 means priority over background
+                        isSprite0 = sprite.IsSprite0;
+                        return color;
+                    }
+                }
+            }
+            
+            return 0; // Transparent
+        }
+
+        private uint GetSpritePixelColor(Sprite sprite, int spriteX, int spriteY)
+        {
+            ushort patternTableBase = (ushort)(_ppu.Registers.F.SpritePatternTableAddress ? PatternTable1Base : PatternTable0Base);
+            
+            byte tileIndex = sprite.TileIndex;
+            
+            // For 8x16 sprites, handle double tiles
+            if (_ppu.Registers.F.SpriteSize)
+            {
+                patternTableBase = (ushort)((tileIndex & 1) == 1 ? PatternTable1Base : PatternTable0Base);
+                tileIndex &= 0xFE; // Even tile for the top part
+                
+                if (spriteY >= 8)
+                {
+                    tileIndex++; // Next tile for the bottom part
+                    spriteY -= 8;
+                }
+            }
+            
+            ushort patternAddr = (ushort)(patternTableBase + (tileIndex * 16) + spriteY);
+            
+            byte lowByte = _ppu.Memory[patternAddr];
+            byte highByte = _ppu.Memory[patternAddr + 8];
+            
+            int bitIndex = 7 - spriteX;
+            int pixel = ((lowByte >> bitIndex) & 1) | (((highByte >> bitIndex) & 1) << 1);
+            
+            if (pixel == 0) return 0; // Transparent
+            
+            // Sprite palettes are at 0x3F11-0x3F1F
+            int paletteIndex = sprite.Attributes & SpritePaletteMask;
+            ushort paletteAddr = (ushort)(SpritePaletteBase + (paletteIndex * 4) + (pixel - 1));
+            byte colorIndex = _ppu.Memory[paletteAddr];
+            
+            return _palette[colorIndex & 0x3F];
         }
 
         private int GetPaletteIndex(int tileX, int tileY)
         {
-            ushort attributeTableBase = (ushort)(0x23C0 + _ppu.Registers.F.BaseNametableAddress);
+            ushort attributeTableBase = (ushort)(AttributeTable0Base + _ppu.Registers.F.BaseNametableAddress);
             
             // Each byte of the attribute table controls a 4x4 tile area (32x32 pixels)
             int attrX = tileX / 4;
@@ -115,14 +289,26 @@ namespace NESPPU
         {
             if (pixel == 0) // Transparent pixel uses universal background color
             {
-                return _palette[_ppu.Memory[0x3F00]];
+                return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
             }
 
             // Background palettes are in 0x3F01-0x3F0F
-            ushort paletteAddr = (ushort)(0x3F01 + (paletteIndex * 4) + (pixel - 1));
+            ushort paletteAddr = (ushort)(BackgroundPaletteBase + (paletteIndex * 4) + (pixel - 1));
             byte colorIndex = _ppu.Memory[paletteAddr];
 
             return _palette[colorIndex & 0x3F]; // Mask for 64 colors
+        }
+
+        private uint GetBackgroundColor(int pixel, int paletteIndex)
+        {
+            if (pixel == 0)
+            {
+                return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
+            }
+
+            ushort paletteAddr = (ushort)(BackgroundPaletteBase + (paletteIndex * 4) + (pixel - 1));
+            byte colorIndex = _ppu.Memory[paletteAddr];
+            return _palette[colorIndex & 0x3F];
         }
     }
 }
