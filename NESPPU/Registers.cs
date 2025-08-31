@@ -104,6 +104,7 @@ namespace NESPPU
                 }
             }
         }
+        
         public byte PPUDATA // PPU Data Register, CPU address $2007
         {
             set
@@ -112,6 +113,7 @@ namespace NESPPU
                 F.PPUAddress += (ushort)(F.IncrementBy32 ? 32 : 1);
             }
         }
+
         public byte OAMDMA { get; set; } // OAM DMA Register, CPU address $4014
 
         public Flags F { get; set; } = new Flags();
