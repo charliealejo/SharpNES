@@ -16,6 +16,7 @@ namespace Emulator
         private readonly ushort _startAddress;
         private readonly NesLogger? _logger;
         private ulong _frameCount;
+        private bool _isRunning;
 
         public CPU CPU { get; set; }
         public PPU PPU { get; set; }
@@ -51,9 +52,9 @@ namespace Emulator
             PPU.Reset();
 
             var clock = new Stopwatch();
-            var executing = true;
+            _isRunning = true;
             var ppuTicksToProcess = PPU.ScanLines * PPU.Dots;
-            while (executing)
+            while (_isRunning)
             {
                 clock.Restart();
 
@@ -65,8 +66,8 @@ namespace Emulator
                         {
                             WriteLog();
                         }
-                        executing = CPU.Clock();
-                        if (!executing)
+                        CPU.Clock();
+                        if (!_isRunning)
                         {
                             break;
                         }
@@ -78,6 +79,12 @@ namespace Emulator
                     ? (int)(MillisecondsPerFrame - clock.Elapsed.TotalMilliseconds)
                     : 0);
             }
+        }
+
+        public void Stop()
+        {
+            _isRunning = false;
+            _logger?.Dispose();
         }
 
         private void WriteLog()

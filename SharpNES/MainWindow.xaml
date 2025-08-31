@@ -14,8 +14,16 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open ROM" Click="OpenROM_Click"/>
+                <Separator/>
+                <MenuItem Header="_Exit" Click="Exit_Click"/>
+            </MenuItem>
+        </Menu>
 
-        <!-- NES Display Area -->
+            <!-- NES Display Area -->
         <Image x:Name="NESViewer" 
                Grid.Row="1"
                Stretch="Uniform"

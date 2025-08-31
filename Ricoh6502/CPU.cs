@@ -74,19 +74,18 @@ namespace Ricoh6502
         /// <summary>
         /// Code that executes every tick of the clock
         /// </summary>
-        /// <returns>true if the CPU is still executing, false if it has halted</returns>
-        public bool Clock()
+        public void Clock()
         {
             if (!IsCycleExecutingCommand())
             {
                 Cycles++;
-                return true;
+                return;
             }
 
             if (_executeDMA)
             {
                 PerformDMA();
-                return true;
+                return;
             }
 
             // Fetch the next instruction
@@ -123,7 +122,6 @@ namespace Ricoh6502
             }
 
             Cycles++;
-            return true;
         }
 
         public bool IsCycleExecutingCommand()
