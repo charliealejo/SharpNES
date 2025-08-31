@@ -1,6 +1,8 @@
 ﻿using Emulator;
+using InputDevices;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -11,6 +13,7 @@ namespace SharpNES
         private readonly SharpNesEmu _emulator;
         private readonly WriteableBitmap _bitmap;
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly Dictionary<Key, NesControllerButtons> _keyMap;
 
         public MainWindow()
         {
@@ -19,6 +22,24 @@ namespace SharpNES
             _emulator.PPU.FrameCompleted += OnFrameCompleted;
             _cancellationTokenSource = new CancellationTokenSource();
 
+            // Initialize key mapping
+            _keyMap = new Dictionary<Key, NesControllerButtons>
+            {
+                { Key.M, NesControllerButtons.A },
+                { Key.N, NesControllerButtons.B },
+                { Key.Enter, NesControllerButtons.Start },
+                { Key.Space, NesControllerButtons.Select },
+                { Key.W, NesControllerButtons.Up },
+                { Key.S, NesControllerButtons.Down },
+                { Key.A, NesControllerButtons.Left },
+                { Key.D, NesControllerButtons.Right },
+                // Arrow keys as alternative
+                { Key.Up, NesControllerButtons.Up },
+                { Key.Down, NesControllerButtons.Down },
+                { Key.Left, NesControllerButtons.Left },
+                { Key.Right, NesControllerButtons.Right }
+            };
+
             // Initialize WriteableBitmap for NESViewer
             _bitmap = new WriteableBitmap(256, 240, 96, 96, PixelFormats.Bgr32, null);
             NESViewer.Source = _bitmap;
@@ -26,7 +47,28 @@ namespace SharpNES
             // Handle window closing
             Closing += MainWindow_Closing;
 
+            // Set focus to receive keyboard events
+            Loaded += (s, e) => Focus();
+
             Task.Run(() => _emulator.Run());
+        }
+
+        private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (_keyMap.TryGetValue(e.Key, out var button))
+            {
+                _emulator.NesController.SetButtonState(button, true);
+                e.Handled = true;
+            }
+        }
+
+        private void MainWindow_KeyUp(object sender, KeyEventArgs e)
+        {
+            if (_keyMap.TryGetValue(e.Key, out var button))
+            {
+                _emulator.NesController.SetButtonState(button, false);
+                e.Handled = true;
+            }
         }
 
         private void MainWindow_Closing(object? sender, CancelEventArgs e)

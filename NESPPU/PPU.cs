@@ -42,7 +42,6 @@
                 FrameCompleted?.Invoke(this, Renderer.FrameBuffer);
             }
 
-
             AdvanceDotAndScanLine();
             UpdateRegistersIfNeeded();
         }

@@ -22,13 +22,12 @@ public enum NesControllerButtons : byte
 /// <summary>
 /// Represents a standard NES controller
 /// </summary>
-public class NesController : IDisposable
+public class NesController
 {
     private const ushort Controller1Address = 0x4016;
     private const ushort Controller2Address = 0x4017;
 
     private NesControllerButtons _currentButtons = NesControllerButtons.None;
-    private KeyboardMapping _keyboardMapping;
 
     private bool _strobe;
     private bool _latch;
@@ -39,7 +38,6 @@ public class NesController : IDisposable
     public NesController(byte[] cpuMemory)
     {
         _cpuMemory = cpuMemory ?? throw new ArgumentNullException(nameof(cpuMemory));
-        _keyboardMapping = new KeyboardMapping(this);
         _strobe = false;
         _latch = false;
         _currentButtonIndex = 0;
@@ -120,10 +118,5 @@ public class NesController : IDisposable
     public void ClearAllButtons()
     {
         _currentButtons = NesControllerButtons.None;
-    }
-
-    public void Dispose()
-    {
-        _keyboardMapping?.Dispose();
     }
 }

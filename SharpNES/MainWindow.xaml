@@ -5,7 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SharpNES"
         mc:Ignorable="d"
-        Title="SharpNES" Height="300" Width="320">
+        Title="SharpNES" Height="300" Width="320"
+        Focusable="True"
+        KeyDown="MainWindow_KeyDown"
+        KeyUp="MainWindow_KeyUp">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
