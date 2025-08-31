@@ -32,10 +32,6 @@ namespace NESPPU
             {
                 _cpu.NMI();
             };
-            _cpu.InputDevicePolling += (s, poll) =>
-            {
-                _nesController.WriteStrobe(poll ? (byte)1 : (byte)0);
-            };
         }
 
         private void OnPPURegisterAccessed(object? sender, Ricoh6502.MemoryAccessEventArgs e)

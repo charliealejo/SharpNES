@@ -26,8 +26,6 @@ namespace Ricoh6502
 
         public event EventHandler<MemoryAccessEventArgs>? DMAWrite;
 
-        public event EventHandler<bool>? InputDevicePolling;
-
         public CPU(NesController nesController)
         {
             _nesController = nesController ?? throw new ArgumentNullException(nameof(nesController));
@@ -206,6 +204,7 @@ namespace Ricoh6502
             if (addressingMode == AddressingMode.Accumulator)
             {
                 Acc = value;
+                return;
             }
 
             var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
@@ -229,7 +228,7 @@ namespace Ricoh6502
             }
             else if (memoryAddress == 0x4016)
             {
-                InputDevicePolling?.Invoke(this, (value & 0x01) != 0);
+                _nesController.WriteStrobe(value);
             }
 
             Memory[memoryAddress] = value;
