@@ -5,6 +5,7 @@
     <ProjectReference Include="..\Logger\Logger.csproj" />
     <ProjectReference Include="..\Ricoh6502\Ricoh6502.csproj" />
     <ProjectReference Include="..\NESPPU\NESPPU.csproj" />
+    <ProjectReference Include="..\InputDevices\InputDevices.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

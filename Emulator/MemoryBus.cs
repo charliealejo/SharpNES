@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using InputDevices;
 using Ricoh6502;
 
 namespace NESPPU
@@ -7,11 +8,13 @@ namespace NESPPU
     {
         private readonly CPU _cpu;
         private readonly PPU _ppu;
+        private readonly NesController _nesController;
 
-        public MemoryBus(CPU cpu, PPU ppu)
+        public MemoryBus(CPU cpu, PPU ppu, NesController nesController)
         {
             _cpu = cpu ?? throw new ArgumentNullException(nameof(cpu));
             _ppu = ppu ?? throw new ArgumentNullException(nameof(ppu));
+            _nesController = nesController ?? throw new ArgumentNullException(nameof(nesController));
         }
 
         public void Initialize()
@@ -28,6 +31,17 @@ namespace NESPPU
             _ppu.TriggerNMI += (s, e) =>
             {
                 _cpu.NMI();
+            };
+            _cpu.InputDevicePolling += (s, poll) =>
+            {
+                if (poll)
+                {
+                    _nesController.Strobe();
+                }
+                else
+                {
+                    _nesController.LatchState();
+                }
             };
         }
 

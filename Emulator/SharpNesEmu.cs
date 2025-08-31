@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Cartridge;
+using InputDevices;
 using Logger;
 using NESPPU;
 using Ricoh6502;
@@ -18,6 +19,7 @@ namespace Emulator
 
         public CPU CPU { get; set; }
         public PPU PPU { get; set; }
+        public NesController NesController { get; set; }
 
         public SharpNesEmu(
             string romPath,
@@ -29,10 +31,11 @@ namespace Emulator
 
             CPU = new CPU();
             PPU = new PPU();
+            NesController = new NesController(CPU.Memory);
             Loader.LoadCartridge(romPath, CPU.Memory, PPU.Memory);
             _startAddress = startAddress;
 
-            var memoryBus = new MemoryBus(CPU, PPU);
+            var memoryBus = new MemoryBus(CPU, PPU, NesController);
             memoryBus.Initialize();
 
             _frameCount = 0;
@@ -62,6 +65,7 @@ namespace Emulator
                         {
                             WriteLog();
                         }
+                        NesController.Clock();
                         executing = CPU.Clock();
                         if (!executing)
                         {

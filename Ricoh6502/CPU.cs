@@ -23,6 +23,8 @@ namespace Ricoh6502
 
         public event EventHandler<MemoryAccessEventArgs>? DMAWrite;
 
+        public event EventHandler<bool>? InputDevicePolling;
+
         public CPU()
         {
             _interrupt = false;
@@ -216,10 +218,14 @@ namespace Ricoh6502
                     Memory[addr] = value;
                 }
             }
-            if (memoryAddress == 0x4014)
+            else if (memoryAddress == 0x4014)
             {
                 PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs(0x14, value));
                 _executeDMA = true;
+            }
+            else if (memoryAddress == 0x4016)
+            {
+                InputDevicePolling?.Invoke(this, (value & 0x01) != 0);
             }
 
             Memory[memoryAddress] = value;
