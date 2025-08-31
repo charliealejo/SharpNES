@@ -1,5 +1,3 @@
-using Ricoh6502;
-
 namespace InputDevices;
 
 /// <summary>
@@ -28,19 +26,13 @@ public class NesController
     private const ushort Controller2Address = 0x4017;
 
     private NesControllerButtons _currentButtons = NesControllerButtons.None;
+    private byte _shiftRegister;
+    private int _readCount;
 
-    private bool _strobe;
-    private bool _latch;
-    private int _currentButtonIndex;
-
-    private byte[] _cpuMemory;
-
-    public NesController(byte[] cpuMemory)
+    public NesController()
     {
-        _cpuMemory = cpuMemory ?? throw new ArgumentNullException(nameof(cpuMemory));
-        _strobe = false;
-        _latch = false;
-        _currentButtonIndex = 0;
+        _shiftRegister = 0;
+        _readCount = 0;
     }
 
     /// <summary>
@@ -52,37 +44,37 @@ public class NesController
         set => _currentButtons = value;
     }
 
-    public void Strobe()
+    /// <summary>
+    /// Called when CPU writes to $4016 (strobe)
+    /// </summary>
+    /// <param name="value">Value written (1 = start strobe, 0 = end strobe and latch)</param>
+    public void WriteStrobe(byte value)
     {
-        _strobe = true;
-    }
-
-    public void LatchState()
-    {
-        if (_strobe)
+        if (value == 0) // End of strobe - latch current button state
         {
-            _strobe = false;
-            _latch = true;
+            _shiftRegister = (byte)_currentButtons;
+            _readCount = 0;
         }
     }
 
-    public void Clock()
+    public byte ReadButtonState()
     {
-        if (_latch)
-        {
-            _cpuMemory[Controller1Address] = (byte)(((byte)_currentButtons & (1 << _currentButtonIndex)) != 0 ? 1 : 0);
-            _currentButtonIndex++;
+        byte result;
         
-            if (_currentButtonIndex >= 8)
-            {
-                _currentButtonIndex = 0;
-                _latch = false;
-            }
+        if (_readCount < 8)
+        {
+            // Return LSB and shift right for next read
+            result = (byte)(_shiftRegister & 1);
+            _shiftRegister >>= 1;
+            _readCount++;
         }
         else
         {
-            _cpuMemory[Controller1Address] = 1;
+            // After 8 reads, return 1 (standard behavior)
+            result = 1;
         }
+        
+        return result;
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using InputDevices;
 using Ricoh6502.Commands;
 
 namespace Ricoh6502
@@ -17,6 +18,8 @@ namespace Ricoh6502
 
         private uint _nextInstructionCycle;
 
+        private NesController _nesController;
+
         public uint Cycles { get; private set; }
 
         public event EventHandler<MemoryAccessEventArgs>? PPURegisterAccessed;
@@ -25,8 +28,9 @@ namespace Ricoh6502
 
         public event EventHandler<bool>? InputDevicePolling;
 
-        public CPU()
+        public CPU(NesController nesController)
         {
+            _nesController = nesController ?? throw new ArgumentNullException(nameof(nesController));
             _interrupt = false;
             _nonMaskableInterrupt = false;
             _executeDMA = false;
@@ -105,12 +109,6 @@ namespace Ricoh6502
             else
             {
                 command = CommandFactory.CreateCommand(opcode, d1, d2);
-            }
-
-            // Check for break command
-            if (command is BRK)
-            {
-                return false;
             }
 
             // Execute the instruction
@@ -194,6 +192,12 @@ namespace Ricoh6502
                 memoryAddress = GetIndirectMemoryAddress(d1, d2);
             }
 
+            if (memoryAddress == 0x4016 || memoryAddress == 0x4017)
+            {
+                var buttonState = _nesController.ReadButtonState();
+                Memory[memoryAddress] = buttonState; // Update memory to reflect the read state
+                return buttonState;
+            }
             return Memory[memoryAddress];
         }
 

@@ -34,14 +34,7 @@ namespace NESPPU
             };
             _cpu.InputDevicePolling += (s, poll) =>
             {
-                if (poll)
-                {
-                    _nesController.Strobe();
-                }
-                else
-                {
-                    _nesController.LatchState();
-                }
+                _nesController.WriteStrobe(poll ? (byte)1 : (byte)0);
             };
         }
 

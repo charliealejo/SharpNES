@@ -6,8 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Ricoh6502\Ricoh6502.csproj" />
-  </ItemGroup>
-
 </Project>

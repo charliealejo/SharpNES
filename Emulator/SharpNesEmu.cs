@@ -29,9 +29,9 @@ namespace Emulator
             _debugMode = debug;
             _logger = debug ? new NesLogger() : null;
 
-            CPU = new CPU();
+            NesController = new NesController();
+            CPU = new CPU(NesController);
             PPU = new PPU();
-            NesController = new NesController(CPU.Memory);
             Loader.LoadCartridge(romPath, CPU.Memory, PPU.Memory);
             _startAddress = startAddress;
 
@@ -65,7 +65,6 @@ namespace Emulator
                         {
                             WriteLog();
                         }
-                        NesController.Clock();
                         executing = CPU.Clock();
                         if (!executing)
                         {
