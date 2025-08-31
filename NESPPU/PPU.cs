@@ -15,6 +15,8 @@
 
         public event EventHandler? TriggerNMI;
 
+        public event EventHandler<int[]>? FrameCompleted;
+
         public PPU()
         {
             Registers = new Registers(this);
@@ -35,6 +37,11 @@
             {
                 Renderer.RenderPixel(ScanLine, Dot);
             }
+            else if (ScanLine == 240 && Dot == 1)
+            {
+                FrameCompleted?.Invoke(this, Renderer.FrameBuffer);
+            }
+
 
             AdvanceDotAndScanLine();
             UpdateRegistersIfNeeded();

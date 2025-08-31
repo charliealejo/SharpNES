@@ -1,7 +1,7 @@
-﻿<Application x:Class="PPUMemoryVisualizer.App"
+﻿<Application x:Class="SharpNES.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:PPUMemoryVisualizer"
+             xmlns:local="clr-namespace:SharpNES"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          

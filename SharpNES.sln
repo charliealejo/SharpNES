@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Emulator", "Emulator\Emulat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NESPPU", "NESPPU\NESPPU.csproj", "{9673D9E8-B5BC-4F90-A912-508DF939AE19}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PPUMemoryVisualizer", "PPUMemoryVisualizer\PPUMemoryVisualizer.csproj", "{1AB99681-0DC9-498E-BA7B-33384EE8192D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpNES", "SharpNES\SharpNES.csproj", "{1AB99681-0DC9-498E-BA7B-33384EE8192D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
