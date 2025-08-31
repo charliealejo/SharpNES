@@ -152,8 +152,8 @@ namespace NESPPU
 
         private uint RenderBackgroundPixel(int x, int y)
         {
-            if (!_ppu.Registers.F.ShowBackground) return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
-            if (!_ppu.Registers.F.ShowBackgroundLeft && x < 8) return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
+            if (!_ppu.Registers.F.ShowBackground) return 0;
+            if (!_ppu.Registers.F.ShowBackgroundLeft && x < 8) return 0;
             
             int scrollX = _ppu.Registers.F.HorizontalScroll;
             int scrollY = _ppu.Registers.F.VerticalScroll;
@@ -282,20 +282,6 @@ namespace NESPPU
             int shift = (quadrantY * 4) + (quadrantX * 2);
             
             return (attrByte >> shift) & 0x03;
-        }
-        
-        private uint GetColor(int pixel, int paletteIndex)
-        {
-            if (pixel == 0) // Transparent pixel uses universal background color
-            {
-                return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
-            }
-
-            // Background palettes are in 0x3F01-0x3F0F
-            ushort paletteAddr = (ushort)(BackgroundPaletteBase + (paletteIndex * 4) + (pixel - 1));
-            byte colorIndex = _ppu.Memory[paletteAddr];
-
-            return _palette[colorIndex & 0x3F]; // Mask for 64 colors
         }
 
         private uint GetBackgroundColor(int pixel, int paletteIndex)

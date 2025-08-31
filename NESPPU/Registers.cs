@@ -37,6 +37,7 @@ namespace NESPPU
                 F.NMIEnabled = (value & 0x80) != 0;
             }
         }
+
         public byte PPUMASK // PPU Mask Register, CPU address $2001
         {
             set
@@ -51,6 +52,7 @@ namespace NESPPU
                 F.EmphasizeBlue = (value & 0x80) != 0;
             }
         }
+
         private byte _ppuStatus;
         public byte PPUSTATUS
         {
@@ -61,7 +63,9 @@ namespace NESPPU
                 PPUStatusChanged?.Invoke(this, value);
             }
         }
+
         public byte OAMADDR { get; set; } // OAM Address Register, CPU address $2003
+
         private byte _oamData;
         public byte OAMDATA // OAM Data Register, CPU address $2004
         {
@@ -72,6 +76,7 @@ namespace NESPPU
                 OAMADDR++;
             }
         }
+
         public byte PPUSCROLL // PPU Scroll Register, CPU address $2005
         {
             set
@@ -88,6 +93,7 @@ namespace NESPPU
                 }
             }
         }
+        
         public byte PPUADDR // PPU Address Register, CPU address $2006
         {
             set

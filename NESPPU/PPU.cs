@@ -33,6 +33,11 @@
         {
             Dot++;
 
+            if (ScanLine < 240 && Dot == 0)
+            {
+                Renderer.EvaluateSprites(ScanLine);
+            }
+
             if (ScanLine < 240 && Dot > 0 && Dot <= 256)
             {
                 Renderer.RenderPixel(ScanLine, Dot);
