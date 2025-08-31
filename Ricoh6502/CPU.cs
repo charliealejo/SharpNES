@@ -228,7 +228,7 @@ namespace Ricoh6502
             }
             else if (memoryAddress == 0x4016)
             {
-                _nesController.WriteStrobe(value);
+                _nesController.WriteStrobe((byte)(value & 0x01));
             }
 
             Memory[memoryAddress] = value;

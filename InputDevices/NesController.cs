@@ -93,22 +93,4 @@ public class NesController
             _currentButtons &= ~button;
         }
     }
-
-    /// <summary>
-    /// Checks if a specific button is currently pressed
-    /// </summary>
-    /// <param name="button">The button to check</param>
-    /// <returns>True if the button is pressed, false otherwise</returns>
-    public bool IsButtonPressed(NesControllerButtons button)
-    {
-        return (_currentButtons & button) != 0;
-    }
-
-    /// <summary>
-    /// Clears all button states
-    /// </summary>
-    public void ClearAllButtons()
-    {
-        _currentButtons = NesControllerButtons.None;
-    }
 }
