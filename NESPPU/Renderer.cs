@@ -155,7 +155,6 @@ namespace NESPPU
             if (!_ppu.Registers.F.ShowBackground) return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
             if (!_ppu.Registers.F.ShowBackgroundLeft && x < 8) return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
             
-            // Your current background rendering code
             int scrollX = _ppu.Registers.F.HorizontalScroll;
             int scrollY = _ppu.Registers.F.VerticalScroll;
 
@@ -171,7 +170,7 @@ namespace NESPPU
             ushort tileAddr = (ushort)(nametableAddr + (tileY * 32) + tileX);
             byte tileId = _ppu.Memory[tileAddr];
 
-            ushort patternTableBase = (ushort)(_ppu.Registers.F.BackgroundPatternTableAddress ? PatternTable1Base : PatternTable0Base);
+            ushort patternTableBase = _ppu.Registers.F.BackgroundPatternTableAddress ? PatternTable1Base : PatternTable0Base;
             ushort patternAddr = (ushort)(patternTableBase + (tileId * 16) + tileOffsetY);
 
             byte lowByte = _ppu.Memory[patternAddr];
@@ -214,7 +213,7 @@ namespace NESPPU
                     // Vertical flip
                     if ((sprite.Attributes & SpriteVerticalFlipMask) != 0)
                     {
-                        spriteY = (spriteHeight - 1) - spriteY;
+                        spriteY = spriteHeight - 1 - spriteY;
                     }
                     
                     uint color = GetSpritePixelColor(sprite, spriteX, spriteY);
@@ -232,14 +231,14 @@ namespace NESPPU
 
         private uint GetSpritePixelColor(Sprite sprite, int spriteX, int spriteY)
         {
-            ushort patternTableBase = (ushort)(_ppu.Registers.F.SpritePatternTableAddress ? PatternTable1Base : PatternTable0Base);
+            ushort patternTableBase = _ppu.Registers.F.SpritePatternTableAddress ? PatternTable1Base : PatternTable0Base;
             
             byte tileIndex = sprite.TileIndex;
             
             // For 8x16 sprites, handle double tiles
             if (_ppu.Registers.F.SpriteSize)
             {
-                patternTableBase = (ushort)((tileIndex & 1) == 1 ? PatternTable1Base : PatternTable0Base);
+                patternTableBase = (tileIndex & 1) == 1 ? PatternTable1Base : PatternTable0Base;
                 tileIndex &= 0xFE; // Even tile for the top part
                 
                 if (spriteY >= 8)
