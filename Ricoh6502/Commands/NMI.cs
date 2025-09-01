@@ -9,7 +9,7 @@ namespace Ricoh6502.Commands
 
         protected override void ExecuteInternal(CPU cpu)
         {
-            var returnAddress = (ushort)(cpu.PC + 2);
+            var returnAddress = cpu.PC;
             cpu.PushStack((byte)(returnAddress >> 8));
             cpu.PushStack((byte)returnAddress);
             cpu.PushStack(cpu.Status.GetStatus());
