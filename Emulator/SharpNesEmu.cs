@@ -37,7 +37,7 @@ namespace Emulator
             PPU.Mirroring = cartridge.Mirroring;
             _startAddress = startAddress;
 
-            var memoryBus = new MemoryBus(CPU, PPU, NesController);
+            var memoryBus = new MemoryBus(CPU, PPU);
             memoryBus.Initialize();
 
             _frameCount = 0;

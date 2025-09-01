@@ -56,7 +56,13 @@ namespace NESPPU
         private byte _ppuStatus;
         public byte PPUSTATUS
         {
-            get { return _ppuStatus; }
+            get
+            {
+                byte status = _ppuStatus;
+                F.VBlank = false; // Reading PPUSTATUS clears VBlank flag
+                W = 0; // Also resets the write toggle
+                return status;
+            }
             set
             {
                 _ppuStatus = value;
@@ -66,13 +72,15 @@ namespace NESPPU
 
         public byte OAMADDR { get; set; } // OAM Address Register, CPU address $2003
 
-        private byte _oamData;
         public byte OAMDATA // OAM Data Register, CPU address $2004
         {
-            get { return _oamData; }
+            get 
+            { 
+                return _ppu.OAM[OAMADDR]; 
+            }
             set
             {
-                _oamData = value;
+                _ppu.OAM[OAMADDR] = value;
                 OAMADDR++;
             }
         }
@@ -111,8 +119,27 @@ namespace NESPPU
             }
         }
         
+        private byte _ppuDataBuffer = 0;
         public byte PPUDATA // PPU Data Register, CPU address $2007
         {
+            get
+            {
+                byte value;
+                if (F.PPUAddress < 0x3F00)
+                {
+                    // Buffered read for everything except palette
+                    value = _ppuDataBuffer;
+                    _ppuDataBuffer = _ppu.ReadMemory(F.PPUAddress);
+                }
+                else
+                {
+                    // Immediate read for palette
+                    value = _ppu.ReadMemory(F.PPUAddress);
+                    _ppuDataBuffer = _ppu.ReadMemory((ushort)(F.PPUAddress - 0x1000)); // Fill buffer with nametable data
+                }
+                F.PPUAddress += (ushort)(F.IncrementBy32 ? 32 : 1);
+                return value;
+            }
             set
             {
                 _ppu.WriteMemory(F.PPUAddress, value);
@@ -121,6 +148,17 @@ namespace NESPPU
         }
 
         public byte OAMDMA { get; set; } // OAM DMA Register, CPU address $4014
+
+        public byte HandleRegisterRead(uint registerIndex)
+        {
+            return registerIndex switch
+            {
+                0x2 => PPUSTATUS,    // $2002
+                0x4 => OAMDATA,      // $2004  
+                0x7 => PPUDATA,      // $2007
+                _ => OpenBus         // Other registers return open bus
+            };
+        }
 
         public Flags F { get; set; } = new Flags();
 

@@ -23,6 +23,8 @@ namespace Ricoh6502
 
         public event EventHandler<MemoryAccessEventArgs>? PPURegisterAccessed;
 
+        public event EventHandler<MemoryAccessEventArgs>? PPURegisterRead;
+
         public event EventHandler<MemoryAccessEventArgs>? DMAWrite;
 
         public CPU(NesController nesController)
@@ -187,10 +189,18 @@ namespace Ricoh6502
                 memoryAddress = GetIndirectMemoryAddress(d1, d2);
             }
 
-            if (memoryAddress == 0x4016 || memoryAddress == 0x4017)
+            // Handle PPU register reads
+            if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
+            {
+                var ppuRegister = memoryAddress % 8;
+                var args = new MemoryAccessEventArgs((uint)ppuRegister, 0);
+                PPURegisterRead?.Invoke(this, args);
+                return args.Value; // Return the value set by the PPU
+            }
+            else if (memoryAddress == 0x4016 || memoryAddress == 0x4017)
             {
                 var buttonState = _nesController.ReadButtonState();
-                Memory[memoryAddress] = buttonState; // Update memory to reflect the read state
+                Memory[memoryAddress] = buttonState;
                 return buttonState;
             }
             return Memory[memoryAddress];

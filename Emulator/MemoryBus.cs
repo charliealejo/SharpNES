@@ -8,18 +8,17 @@ namespace NESPPU
     {
         private readonly CPU _cpu;
         private readonly PPU _ppu;
-        private readonly NesController _nesController;
 
-        public MemoryBus(CPU cpu, PPU ppu, NesController nesController)
+        public MemoryBus(CPU cpu, PPU ppu)
         {
             _cpu = cpu ?? throw new ArgumentNullException(nameof(cpu));
             _ppu = ppu ?? throw new ArgumentNullException(nameof(ppu));
-            _nesController = nesController ?? throw new ArgumentNullException(nameof(nesController));
         }
 
         public void Initialize()
         {
             _cpu.PPURegisterAccessed += OnPPURegisterAccessed;
+            _cpu.PPURegisterRead += (sender, args) => args.Value = _ppu.Registers.HandleRegisterRead(args.Register);
             _cpu.DMAWrite += OnDMAWrite;
             _ppu.Registers.PPUStatusChanged += (s, e) =>
             {
