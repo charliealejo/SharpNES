@@ -12,7 +12,7 @@ namespace NESPPU
         public int ScanLine { get; private set; }
         public int Dot { get; private set; }
 
-        private byte[] _memory = new byte[0x4000];
+        private readonly byte[] _memory = new byte[0x4000];
         public byte[] Memory { get { return _memory; } }
         public byte[] OAM = new byte[0x100];
         
@@ -59,6 +59,12 @@ namespace NESPPU
                 // $3F20-$3FFF mirrors $3F00-$3F1F (palette RAM)
                 address = (ushort)(0x3F00 + ((address - 0x3F00) % 0x20));
             }
+
+            // Handle palette mirroring at $3F10, $3F14, $3F18, $3F1C
+            else if (address == 0x3F10) address = 0x3F00;
+            else if (address == 0x3F14) address = 0x3F04;
+            else if (address == 0x3F18) address = 0x3F08;
+            else if (address == 0x3F1C) address = 0x3F0C;
 
             // Handle nametable mirroring ($2000-$2FFF)
             if (address >= 0x2000 && address <= 0x2FFF)

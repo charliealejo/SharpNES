@@ -5,6 +5,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="testroms\mario.nes">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="testroms\donkey.nes">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
