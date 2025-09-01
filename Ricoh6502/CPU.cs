@@ -1,5 +1,4 @@
-﻿using System.Net;
-using InputDevices;
+﻿using InputDevices;
 using Ricoh6502.Commands;
 
 namespace Ricoh6502
@@ -116,7 +115,7 @@ namespace Ricoh6502
             {
                 _interrupt = false;
             }
-            else if (_nonMaskableInterrupt)
+            else if (command is NMI)
             {
                 _nonMaskableInterrupt = false;
             }
@@ -275,7 +274,7 @@ namespace Ricoh6502
                 _dmaCycle = 0;
                 _executeDMA = false;
             }
-            else if (_dmaCycle % 2 == 0)
+            else
             {
                 var page = Memory[0x4014];
                 uint offset = _dmaCycle / 2;
