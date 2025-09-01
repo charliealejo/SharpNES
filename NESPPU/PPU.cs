@@ -103,8 +103,6 @@ namespace NESPPU
 
         public void Clock()
         {
-            Dot++;
-
             if (ScanLine < 240 && Dot == 0)
             {
                 Renderer.EvaluateSprites(ScanLine);
@@ -125,6 +123,8 @@ namespace NESPPU
 
         private void AdvanceDotAndScanLine()
         {
+            Dot++;
+
             if (Dot >= Dots)
             {
                 Dot = 0;
