@@ -4,6 +4,7 @@ namespace Cartridge
     {
         Horizontal,
         Vertical,
-        FourScreen
+        FourScreen,
+        SingleScreen
     }
 }

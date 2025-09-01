@@ -115,7 +115,7 @@ namespace NESPPU
         {
             set
             {
-                _ppu.Memory[F.PPUAddress] = value;
+                _ppu.WriteMemory(F.PPUAddress, value);
                 F.PPUAddress += (ushort)(F.IncrementBy32 ? 32 : 1);
             }
         }

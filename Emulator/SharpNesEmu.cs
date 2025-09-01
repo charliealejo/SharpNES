@@ -33,7 +33,8 @@ namespace Emulator
             NesController = new NesController();
             CPU = new CPU(NesController);
             PPU = new PPU();
-            Loader.LoadCartridge(romPath, CPU.Memory, PPU.Memory);
+            var cartridge = Loader.LoadCartridge(romPath, CPU.Memory, PPU.Memory);
+            PPU.Mirroring = cartridge.Mirroring;
             _startAddress = startAddress;
 
             var memoryBus = new MemoryBus(CPU, PPU, NesController);

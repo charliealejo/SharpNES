@@ -168,13 +168,13 @@ namespace NESPPU
 
             ushort nametableAddr = (ushort)(Nametable0Base + _ppu.Registers.F.BaseNametableAddress);
             ushort tileAddr = (ushort)(nametableAddr + (tileY * 32) + tileX);
-            byte tileId = _ppu.Memory[tileAddr];
+            byte tileId = _ppu.ReadMemory(tileAddr);
 
             ushort patternTableBase = _ppu.Registers.F.BackgroundPatternTableAddress ? PatternTable1Base : PatternTable0Base;
             ushort patternAddr = (ushort)(patternTableBase + (tileId * 16) + tileOffsetY);
 
-            byte lowByte = _ppu.Memory[patternAddr];
-            byte highByte = _ppu.Memory[patternAddr + 8];
+            byte lowByte = _ppu.ReadMemory(patternAddr);
+            byte highByte = _ppu.ReadMemory((ushort)(patternAddr + 8));
 
             int bitIndex = 7 - tileOffsetX;
             int pixel = ((lowByte >> bitIndex) & 1) | (((highByte >> bitIndex) & 1) << 1);
@@ -249,10 +249,10 @@ namespace NESPPU
             }
             
             ushort patternAddr = (ushort)(patternTableBase + (tileIndex * 16) + spriteY);
-            
-            byte lowByte = _ppu.Memory[patternAddr];
-            byte highByte = _ppu.Memory[patternAddr + 8];
-            
+
+            byte lowByte = _ppu.ReadMemory(patternAddr);
+            byte highByte = _ppu.ReadMemory((ushort)(patternAddr + 8));
+
             int bitIndex = 7 - spriteX;
             int pixel = ((lowByte >> bitIndex) & 1) | (((highByte >> bitIndex) & 1) << 1);
             
@@ -261,8 +261,8 @@ namespace NESPPU
             // Sprite palettes are at 0x3F11-0x3F1F
             int paletteIndex = sprite.Attributes & SpritePaletteMask;
             ushort paletteAddr = (ushort)(SpritePaletteBase + (paletteIndex * 4) + (pixel - 1));
-            byte colorIndex = _ppu.Memory[paletteAddr];
-            
+            byte colorIndex = _ppu.ReadMemory(paletteAddr);
+
             return _palette[colorIndex & 0x3F];
         }
 
@@ -274,8 +274,8 @@ namespace NESPPU
             int attrX = tileX / 4;
             int attrY = tileY / 4;
             ushort attrAddr = (ushort)(attributeTableBase + (attrY * 8) + attrX);
-            byte attrByte = _ppu.Memory[attrAddr];
-            
+            byte attrByte = _ppu.ReadMemory(attrAddr);
+
             // Each byte contains 4 palettes of 2 bits each
             int quadrantX = tileX % 4 / 2;
             int quadrantY = tileY % 4 / 2;
@@ -288,11 +288,11 @@ namespace NESPPU
         {
             if (pixel == 0)
             {
-                return _palette[_ppu.Memory[UniversalBackgroundColorAddr]];
+                return _palette[_ppu.ReadMemory(UniversalBackgroundColorAddr)];
             }
 
             ushort paletteAddr = (ushort)(BackgroundPaletteBase + (paletteIndex * 4) + (pixel - 1));
-            byte colorIndex = _ppu.Memory[paletteAddr];
+            byte colorIndex = _ppu.ReadMemory(paletteAddr);
             return _palette[colorIndex & 0x3F];
         }
     }
