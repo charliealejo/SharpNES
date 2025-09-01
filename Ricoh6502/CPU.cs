@@ -203,6 +203,13 @@ namespace Ricoh6502
                 Memory[memoryAddress] = buttonState;
                 return buttonState;
             }
+
+            // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
+            if (memoryAddress >= 0x0800 && memoryAddress < 0x2000)
+            {
+                memoryAddress = (ushort)(memoryAddress & 0x07FF);
+            }
+
             return Memory[memoryAddress];
         }
 
@@ -238,6 +245,12 @@ namespace Ricoh6502
                 _nesController.WriteStrobe((byte)(value & 0x01));
             }
 
+            // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
+            if (memoryAddress >= 0x0800 && memoryAddress < 0x2000)
+            {
+                memoryAddress = (ushort)(memoryAddress & 0x07FF);
+            }
+
             Memory[memoryAddress] = value;
         }
 
@@ -261,7 +274,7 @@ namespace Ricoh6502
         public void Reset()
         {
             SetPCWithInterruptVector(0xFFFC);
-            SP -= 3;
+            SP = 0xFD;
             Status.InterruptDisable = true;
             Cycles = 0;
             _nextInstructionCycle = 7;
