@@ -35,6 +35,7 @@ namespace NESPPU
                 F.SpriteSize = (value & 0x20) != 0;
                 F.PPUMaster = (value & 0x40) != 0;
                 F.NMIEnabled = (value & 0x80) != 0;
+                W = 0;
             }
         }
 

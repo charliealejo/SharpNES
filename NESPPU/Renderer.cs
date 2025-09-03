@@ -1,3 +1,5 @@
+using Cartridge;
+
 namespace NESPPU
 {
     /// <summary>
@@ -156,18 +158,59 @@ namespace NESPPU
             if (!_ppu.Registers.F.ShowBackground) return 0;
             if (!_ppu.Registers.F.ShowBackgroundLeft && x < 8) return 0;
             
-            int scrollX = _ppu.Registers.F.HorizontalScroll;
-            int scrollY = _ppu.Registers.F.VerticalScroll;
+            // Calculate total scroll in pixels from coarse/fine components
+            int coarseX = (_ppu.Registers.F.HorizontalScroll >> 3) & 0x1F; // Coarse X (0-31)
+            int fineX = _ppu.Registers.F.HorizontalScroll & 0x07;         // Fine X (0-7)
+            int totalScrollX = coarseX * 8 + fineX;
+            
+            int coarseY = (_ppu.Registers.F.VerticalScroll >> 3) & 0x1F; // Coarse Y (0-29)
+            int fineY = _ppu.Registers.F.VerticalScroll & 0x07;         // Fine Y (0-7)
+            int totalScrollY = coarseY * 8 + fineY;
 
-            int screenX = (x + scrollX) % Width;
-            int screenY = (y + scrollY) % Height;
+            // Compute effective positions including total scroll
+            int effectiveX = x + totalScrollX;
+            int effectiveY = y + totalScrollY;
 
+            // Determine nametable offsets based on effective positions
+            int nametableX = effectiveX / 256;
+            int nametableY = effectiveY / 240;
+
+            // Wrap screen coordinates within a single nametable
+            int screenX = effectiveX % 256;
+            int screenY = effectiveY % 240;
+
+            // Calculate nametable index (0-3), starting from base and adjusting for scroll
+            int baseNametableIndex = _ppu.Registers.F.BaseNametableAddress / 0x400; // 0-3
+            int scrolledNametableIndex = baseNametableIndex + ((nametableY % 2) << 1) + (nametableX % 2);
+
+            // Apply mirroring based on cartridge type (from PPU.Mirroring, set by Cartridge)
+            switch (_ppu.Mirroring)
+            {
+                case MirroringType.Horizontal:
+                    // Mirrors nametables 0<->1, 2<->3: Force even indices
+                    scrolledNametableIndex = (scrolledNametableIndex / 2) * 2;
+                    break;
+                case MirroringType.Vertical:
+                    // Mirrors nametables 0<->2, 1<->3: Force indices 0 or 1
+                    scrolledNametableIndex %= 2;
+                    break;
+                case MirroringType.FourScreen:
+                default:
+                    // No mirroring: Wrap 0-3 normally
+                    scrolledNametableIndex %= 4;
+                    break;
+            }
+
+            // Compute addresses for the correct nametable
+            ushort nametableAddr = (ushort)(Nametable0Base + scrolledNametableIndex * 0x400);
+            ushort attributeTableAddr = (ushort)(AttributeTable0Base + scrolledNametableIndex * 0x400);
+
+            // Rest of the method uses screenX/screenY instead of the old wrapped values
             int tileX = screenX / 8;
             int tileY = screenY / 8;
             int tileOffsetX = screenX % 8;
             int tileOffsetY = screenY % 8;
 
-            ushort nametableAddr = (ushort)(Nametable0Base + _ppu.Registers.F.BaseNametableAddress);
             ushort tileAddr = (ushort)(nametableAddr + (tileY * 32) + tileX);
             byte tileId = _ppu.ReadMemory(tileAddr);
 
@@ -180,7 +223,7 @@ namespace NESPPU
             int bitIndex = 7 - tileOffsetX;
             int pixel = ((lowByte >> bitIndex) & 1) | (((highByte >> bitIndex) & 1) << 1);
 
-            int paletteIndex = GetPaletteIndex(tileX, tileY);
+            int paletteIndex = GetPaletteIndex(tileX, tileY, attributeTableAddr);
             return GetBackgroundColor(pixel, paletteIndex);
         }
 
@@ -267,14 +310,12 @@ namespace NESPPU
             return _palette[colorIndex & 0x3F];
         }
 
-        private int GetPaletteIndex(int tileX, int tileY)
+        private int GetPaletteIndex(int tileX, int tileY, ushort attributeTableAddr)
         {
-            ushort attributeTableBase = (ushort)(AttributeTable0Base + _ppu.Registers.F.BaseNametableAddress);
-            
             // Each byte of the attribute table controls a 4x4 tile area (32x32 pixels)
             int attrX = tileX / 4;
             int attrY = tileY / 4;
-            ushort attrAddr = (ushort)(attributeTableBase + (attrY * 8) + attrX);
+            ushort attrAddr = (ushort)(attributeTableAddr + (attrY * 8) + attrX);
             byte attrByte = _ppu.ReadMemory(attrAddr);
 
             // Each byte contains 4 palettes of 2 bits each
