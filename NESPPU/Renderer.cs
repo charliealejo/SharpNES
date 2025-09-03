@@ -129,7 +129,8 @@ namespace NESPPU
                 int spriteHeight = _ppu.Registers.F.SpriteSize ? 16 : 8;
                 
                 // Check if the sprite is on this scanline
-                if (scanline >= spriteY && scanline < spriteY + spriteHeight)
+                // NES sprites appear on scanline Y+1, not Y
+                if (scanline >= spriteY + 1 && scanline < spriteY + 1 + spriteHeight)
                 {
                     _activeSprites[_activeSpriteCount] = new Sprite
                     {
@@ -199,10 +200,10 @@ namespace NESPPU
                 // Check if the pixel is inside the sprite
                 int spriteHeight = _ppu.Registers.F.SpriteSize ? 16 : 8;
                 if (x >= sprite.X && x < sprite.X + 8 && 
-                    y >= sprite.Y && y < sprite.Y + spriteHeight)
+                    y >= sprite.Y + 1 && y < sprite.Y + 1 + spriteHeight) // Adjust Y position
                 {
                     int spriteX = x - sprite.X;
-                    int spriteY = y - sprite.Y;
+                    int spriteY = y - (sprite.Y + 1); // Adjust Y calculation
                     
                     // Horizontal flip
                     if ((sprite.Attributes & SpriteHorizontalFlipMask) != 0)
