@@ -43,7 +43,7 @@ namespace Emulator
             _frameCount = 0;
         }
 
-        public void Run()
+        public void Start()
         {
             CPU.Reset();
             if (_startAddress > 0)
@@ -52,34 +52,64 @@ namespace Emulator
             }
             PPU.Reset();
 
-            var clock = new Stopwatch();
             _isRunning = true;
-            var ppuTicksToProcess = PPU.ScanLines * PPU.Dots;
-            while (_isRunning)
+            Run();
+        }
+
+        public void Run()
+        {
+            var clock = new Stopwatch();
+            while (true)
             {
                 clock.Restart();
-
-                for (int i = 0; i < ppuTicksToProcess; i++)
+                if (_isRunning)
                 {
-                    if (_frameCount++ % 3 == 0)
-                    {
-                        if (_debugMode && CPU.IsCycleExecutingCommand())
-                        {
-                            WriteLog();
-                        }
-                        CPU.Clock();
-                        if (!_isRunning)
-                        {
-                            break;
-                        }
-                    }
-                    PPU.Clock();
+                    RenderFrame();
                 }
 
                 Thread.Sleep(MillisecondsPerFrame > clock.Elapsed.TotalMilliseconds
                     ? (int)(MillisecondsPerFrame - clock.Elapsed.TotalMilliseconds)
                     : 0);
             }
+        }
+
+        private void RenderFrame()
+        {
+            for (int i = 0; i < PPU.ScanLines * PPU.Dots; i++)
+            {
+                if (_frameCount++ % 3 == 0)
+                {
+                    if (_debugMode && CPU.IsCycleExecutingCommand())
+                    {
+                        WriteLog();
+                    }
+                    CPU.Clock();
+                    if (!_isRunning)
+                    {
+                        break;
+                    }
+                }
+                PPU.Clock();
+            }
+        }
+
+        public void Pause()
+        {
+            _isRunning = false;
+        }
+
+        public void Resume()
+        {
+            if (!_isRunning)
+            {
+                _isRunning = true;
+            }
+        }
+
+        public void StepToNextFrame()
+        {
+            if (_isRunning) return;
+            RenderFrame();
         }
 
         public void Stop()

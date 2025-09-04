@@ -11,7 +11,7 @@ namespace CpuTest
                 true,
                 0xC000);
                 
-            emulator.Run();
+            emulator.Start();
         }
     }
 }

@@ -3,9 +3,11 @@ using InputDevices;
 using Microsoft.Win32;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace SharpNES
 {
@@ -14,6 +16,7 @@ namespace SharpNES
         private readonly WriteableBitmap _bitmap;
         private readonly Dictionary<Key, NesControllerButtons> _keyMap;
         private CancellationTokenSource _cancellationTokenSource;
+        private DispatcherTimer _debugUpdateTimer;
 
         private SharpNesEmu _emulator;
         private Task? _emulatorTask;
@@ -47,13 +50,186 @@ namespace SharpNES
             _bitmap = new WriteableBitmap(256, 240, 96, 96, PixelFormats.Bgr32, null);
             NESViewer.Source = _bitmap;
 
+            // Initialize debug update timer
+            _debugUpdateTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(16) // ~60 FPS
+            };
+            _debugUpdateTimer.Tick += UpdateDebugInfo;
+            _debugUpdateTimer.Start();
+
             // Handle window closing
             Closing += MainWindow_Closing;
 
             // Set focus to receive keyboard events
             Loaded += (s, e) => Focus();
 
-            _emulatorTask = Task.Run(() => _emulator.Run());
+            _emulatorTask = Task.Run(() => _emulator.Start());
+        }
+
+        private void UpdateDebugInfo(object? sender, EventArgs e)
+        {
+            if (_emulator?.PPU == null) return;
+
+            var ppu = _emulator.PPU;
+            var registers = ppu.Registers;
+            var flags = registers.F;
+
+            // Basic scroll values
+            XScroll.Text = flags.HorizontalScroll.ToString();
+            YScroll.Text = flags.VerticalScroll.ToString();
+            PPUAddrText.Text = $"${flags.PPUAddress:X4}";
+
+            // Status Flags
+            VBlankText.Text = flags.VBlank.ToString();
+            Sprite0HitText.Text = flags.Sprite0Hit.ToString();
+            SpriteOverflowText.Text = flags.SpriteOverflow.ToString();
+            NMIEnabledText.Text = flags.NMIEnabled.ToString();
+
+            // Rendering Flags
+            ShowBackgroundText.Text = flags.ShowBackground.ToString();
+            ShowSpritesText.Text = flags.ShowSprites.ToString();
+            BGPatternText.Text = flags.BackgroundPatternTableAddress ? "$1000" : "$0000";
+            SprPatternText.Text = flags.SpritePatternTableAddress ? "$1000" : "$0000";
+
+            // Update additional debug information if TextBlocks exist
+            UpdateAdditionalDebugInfo(ppu, registers, flags);
+        }
+
+        private void UpdateAdditionalDebugInfo(NESPPU.PPU ppu, NESPPU.Registers registers, NESPPU.Registers.Flags flags)
+        {
+            // Try to update additional fields if they exist in XAML
+            try
+            {
+                // Timing Information
+                if (FindName("ScanLineText") is TextBlock scanLineText)
+                    scanLineText.Text = ppu.ScanLine.ToString();
+                
+                if (FindName("DotText") is TextBlock dotText)
+                    dotText.Text = ppu.Dot.ToString();
+
+                // Register Values
+                if (FindName("PPUStatusText") is TextBlock ppuStatusText)
+                    ppuStatusText.Text = $"${registers.PPUSTATUS:X2}";
+                
+                if (FindName("OAMAddrText") is TextBlock oamAddrText)
+                    oamAddrText.Text = $"${registers.OAMADDR:X2}";
+                
+                if (FindName("BaseNametableText") is TextBlock baseNametableText)
+                    baseNametableText.Text = $"${flags.BaseNametableAddress + 0x2000:X4}";
+
+                // Current Tile Information (only during visible scanlines)
+                if (ppu.ScanLine < 240 && ppu.Dot > 0 && ppu.Dot <= 256)
+                {
+                    var effectiveX = ppu.Dot - 1 + flags.HorizontalScroll;
+                    var effectiveY = ppu.ScanLine + flags.VerticalScroll;
+                    
+                    var tileX = effectiveX / 8;
+                    var tileY = effectiveY / 8;
+                    
+                    // Handle nametable wrapping
+                    var nametableX = (tileX / 32) % 2;
+                    var nametableY = (tileY / 30) % 2;
+                    var currentNametable = (ushort)(0x2000 + (nametableY * 0x800) + (nametableX * 0x400));
+                    
+                    var localTileX = tileX % 32;
+                    var localTileY = tileY % 30;
+                    
+                    if (FindName("CurrentTileXText") is TextBlock currentTileXText)
+                        currentTileXText.Text = localTileX.ToString();
+                    
+                    if (FindName("CurrentTileYText") is TextBlock currentTileYText)
+                        currentTileYText.Text = localTileY.ToString();
+
+                    // Tile index and address
+                    var tileAddr = (ushort)(currentNametable + (localTileY * 32) + localTileX);
+                    var tileIndex = ppu.ReadMemory(tileAddr);
+                    
+                    if (FindName("TileIndexText") is TextBlock tileIndexText)
+                        tileIndexText.Text = $"${tileIndex:X2}";
+                    
+                    if (FindName("TileAddressText") is TextBlock tileAddressText)
+                        tileAddressText.Text = $"${tileAddr:X4}";
+
+                    // Attribute table information
+                    var attrX = localTileX / 4;
+                    var attrY = localTileY / 4;
+                    var attrAddr = (ushort)(currentNametable + 0x3C0 + (attrY * 8) + attrX);
+                    var attrData = ppu.ReadMemory(attrAddr);
+                    
+                    if (FindName("AttributeDataText") is TextBlock attributeDataText)
+                        attributeDataText.Text = $"${attrData:X2}";
+                    
+                    if (FindName("AttributeAddrText") is TextBlock attributeAddrText)
+                        attributeAddrText.Text = $"${attrAddr:X4}";
+
+                    // Palette calculation
+                    var quadrantX = (localTileX % 4) / 2;
+                    var quadrantY = (localTileY % 4) / 2;
+                    var quadrant = quadrantY * 2 + quadrantX;
+                    var paletteIndex = (attrData >> (quadrant * 2)) & 0x03;
+                    var paletteAddr = (ushort)(0x3F01 + (paletteIndex * 4));
+                    
+                    if (FindName("PaletteAddrText") is TextBlock paletteAddrText)
+                        paletteAddrText.Text = $"${paletteAddr:X4}";
+
+                    // Current nametable
+                    if (FindName("CurrentNametableText") is TextBlock currentNametableText)
+                        currentNametableText.Text = $"${currentNametable:X4}";
+                }
+                else
+                {
+                    // Clear tile info when not in visible area
+                    if (FindName("CurrentTileXText") is TextBlock currentTileXText)
+                        currentTileXText.Text = "-";
+                    if (FindName("CurrentTileYText") is TextBlock currentTileYText)
+                        currentTileYText.Text = "-";
+                    if (FindName("TileIndexText") is TextBlock tileIndexText)
+                        tileIndexText.Text = "$--";
+                    if (FindName("TileAddressText") is TextBlock tileAddressText)
+                        tileAddressText.Text = "$----";
+                    if (FindName("AttributeDataText") is TextBlock attributeDataText)
+                        attributeDataText.Text = "$--";
+                    if (FindName("AttributeAddrText") is TextBlock attributeAddrText)
+                        attributeAddrText.Text = "$----";
+                    if (FindName("PaletteAddrText") is TextBlock paletteAddrText)
+                        paletteAddrText.Text = "$----";
+                    if (FindName("CurrentNametableText") is TextBlock currentNametableText)
+                        currentNametableText.Text = "$----";
+                }
+
+                // Additional control flags
+                if (FindName("IncrementModeText") is TextBlock incrementModeText)
+                    incrementModeText.Text = flags.IncrementBy32 ? "32" : "1";
+                
+                if (FindName("SpriteSizeText") is TextBlock spriteSizeText)
+                    spriteSizeText.Text = flags.SpriteSize ? "8x16" : "8x8";
+                
+                if (FindName("GrayscaleText") is TextBlock grayscaleText)
+                    grayscaleText.Text = flags.Grayscale.ToString();
+
+                // Emphasis flags
+                if (FindName("EmphasizeRedText") is TextBlock emphasizeRedText)
+                    emphasizeRedText.Text = flags.EmphasizeRed.ToString();
+                if (FindName("EmphasizeGreenText") is TextBlock emphasizeGreenText)
+                    emphasizeGreenText.Text = flags.EmphasizeGreen.ToString();
+                if (FindName("EmphasizeBlueText") is TextBlock emphasizeBlueText)
+                    emphasizeBlueText.Text = flags.EmphasizeBlue.ToString();
+
+                // Left edge clipping
+                if (FindName("ShowBGLeftText") is TextBlock showBGLeftText)
+                    showBGLeftText.Text = flags.ShowBackgroundLeft.ToString();
+                if (FindName("ShowSprLeftText") is TextBlock showSprLeftText)
+                    showSprLeftText.Text = flags.ShowSpritesLeft.ToString();
+
+                // Mirroring type
+                if (FindName("MirroringText") is TextBlock mirroringText)
+                    mirroringText.Text = ppu.Mirroring.ToString();
+            }
+            catch
+            {
+                // Ignore errors if TextBlocks don't exist
+            }
         }
 
         private void OnFrameCompleted(object? sender, int[] e)
@@ -102,7 +278,7 @@ namespace SharpNES
                 _cancellationTokenSource = new CancellationTokenSource();
 
                 // Start the new emulator task
-                _emulatorTask = Task.Run(() => _emulator.Run());
+                _emulatorTask = Task.Run(() => _emulator.Start());
             }
         }
 
@@ -139,6 +315,22 @@ namespace SharpNES
             _cancellationTokenSource.Dispose();
         }
 
+        // Debug control button event handlers
+        private void PauseButton_Click(object sender, RoutedEventArgs e)
+        {
+            _emulator.Pause();
+        }
+
+        private void ResumeButton_Click(object sender, RoutedEventArgs e)
+        {
+            _emulator.Resume();
+        }
+
+        private void StepButton_Click(object sender, RoutedEventArgs e)
+        {
+            _emulator.StepToNextFrame();
+        }
+
         private void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
             if (_keyMap.TryGetValue(e.Key, out var button))
@@ -159,6 +351,9 @@ namespace SharpNES
 
         private async void MainWindow_Closing(object? sender, CancelEventArgs e)
         {
+            // Stop the debug timer
+            _debugUpdateTimer?.Stop();
+            
             // Stop the emulator properly when closing
             await StopCurrentEmulator();
         }
