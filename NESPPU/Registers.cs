@@ -24,10 +24,16 @@ namespace NESPPU
             };
         }
 
+        private byte _ppuCtrl;
         public byte PPUCTRL // PPU Control Register, CPU address $2000
         {
+            get
+            {
+                return _ppuCtrl;
+            }
             set
             {
+                _ppuCtrl = value;
                 F.BaseNametableAddress = (ushort)((value & 0x03) * 0x400);
                 F.IncrementBy32 = (value & 0x04) != 0;
                 F.SpritePatternTableAddress = (value & 0x08) != 0;
@@ -92,12 +98,12 @@ namespace NESPPU
             {
                 if (W == 0)
                 {
-                    F.HorizontalScroll = value;
+                    F.HorizontalScroll = (ushort)((_ppuCtrl & 0x1 << 8) | value);
                     W = 1;
                 }
                 else
                 {
-                    F.VerticalScroll = value;
+                    F.VerticalScroll = (ushort)((_ppuCtrl & 0x2 << 7) | value);
                     W = 0;
                 }
             }
@@ -226,8 +232,8 @@ namespace NESPPU
                 return status;
             }
 
-            public byte HorizontalScroll { get; set; }
-            public byte VerticalScroll { get; set; }
+            public ushort HorizontalScroll { get; set; }
+            public ushort VerticalScroll { get; set; }
 
             public ushort PPUAddress { get; set; }
         }
