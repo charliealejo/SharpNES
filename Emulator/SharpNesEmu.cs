@@ -84,10 +84,6 @@ namespace Emulator
                         WriteLog();
                     }
                     CPU.Clock();
-                    if (!_isRunning)
-                    {
-                        break;
-                    }
                 }
                 PPU.Clock();
             }
