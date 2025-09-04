@@ -52,7 +52,7 @@ namespace NESPPU
             if (address >= 0x3000 && address <= 0x3EFF)
             {
                 // $3000-$3EFF mirrors $2000-$2EFF
-                address = (ushort)(0x2000 + (address - 0x3000));
+                address = (ushort)(address - 0x1000);
             }
             else if (address >= 0x3F20 && address <= 0x3FFF)
             {
@@ -67,7 +67,7 @@ namespace NESPPU
             else if (address == 0x3F1C) address = 0x3F0C;
 
             // Handle nametable mirroring ($2000-$2FFF)
-            if (address >= 0x2000 && address <= 0x2FFF)
+            else if (address >= 0x2000 && address <= 0x2FFF)
             {
                 address = MirrorNametable(address);
             }
