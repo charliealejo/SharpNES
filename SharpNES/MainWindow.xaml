@@ -21,6 +21,13 @@
                 <Separator/>
                 <MenuItem Header="_Exit" Click="Exit_Click"/>
             </MenuItem>
+            <MenuItem Header="_Debug">
+                <MenuItem Header="_Pause" Click="PauseButton_Click"/>
+                <MenuItem Header="_Resume" Click="ResumeButton_Click"/>
+                <MenuItem Header="_Step" Click="StepButton_Click"/>
+                <Separator/>
+                <MenuItem Header="Pattern _Table Viewer" Click="PatternTableViewerButton_Click"/>
+            </MenuItem>
         </Menu>
 
         <Grid Grid.Row="1">

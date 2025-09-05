@@ -21,6 +21,8 @@ namespace SharpNES
         private SharpNesEmu _emulator;
         private Task? _emulatorTask;
 
+        private PatternTableViewer _patternTableViewer;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -65,6 +67,9 @@ namespace SharpNES
             Loaded += (s, e) => Focus();
 
             _emulatorTask = Task.Run(() => _emulator.Start());
+
+            // Initialize debug windows
+            _patternTableViewer = new PatternTableViewer(_emulator);
         }
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
@@ -279,6 +284,9 @@ namespace SharpNES
 
                 // Start the new emulator task
                 _emulatorTask = Task.Run(() => _emulator.Start());
+
+                // Recreate debug windows with the new emulator instance
+                _patternTableViewer = new PatternTableViewer(_emulator);
             }
         }
 
@@ -313,6 +321,9 @@ namespace SharpNES
 
             // Dispose the old cancellation token source
             _cancellationTokenSource.Dispose();
+
+            // Destroy debug windows
+            _patternTableViewer.Close();
         }
 
         // Debug control button event handlers
@@ -329,6 +340,11 @@ namespace SharpNES
         private void StepButton_Click(object sender, RoutedEventArgs e)
         {
             _emulator.StepToNextFrame();
+        }
+
+        private void PatternTableViewerButton_Click(object sender, RoutedEventArgs e)
+        {
+            _patternTableViewer.Show();
         }
 
         private void MainWindow_KeyDown(object sender, KeyEventArgs e)
@@ -356,11 +372,25 @@ namespace SharpNES
             
             // Stop the emulator properly when closing
             await StopCurrentEmulator();
+
+            // Ensure all child windows are closed
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window != this && window.IsLoaded)
+                {
+                    window.Close();
+                }
+            }
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
