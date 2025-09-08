@@ -27,6 +27,7 @@
                 <MenuItem Header="_Step" Click="StepButton_Click"/>
                 <Separator/>
                 <MenuItem Header="Pattern _Table Viewer" Click="PatternTableViewerButton_Click"/>
+                <MenuItem Header="_Nametables Viewer" Click="NametablesViewerButton_Click"/>
             </MenuItem>
         </Menu>
 

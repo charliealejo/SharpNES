@@ -22,6 +22,7 @@ namespace SharpNES
         private Task? _emulatorTask;
 
         private PatternTableViewer _patternTableViewer;
+        private NametablesViewer _nametablesViewer;
 
         public MainWindow()
         {
@@ -66,10 +67,11 @@ namespace SharpNES
             // Set focus to receive keyboard events
             Loaded += (s, e) => Focus();
 
-            _emulatorTask = Task.Run(() => _emulator.Start());
+            _emulatorTask = Task.Run(() => _emulator.Start(_cancellationTokenSource.Token));
 
             // Initialize debug windows
             _patternTableViewer = new PatternTableViewer(_emulator);
+            _nametablesViewer = new NametablesViewer(_emulator);
         }
 
         private void UpdateDebugInfo(object? sender, EventArgs e)
@@ -283,30 +285,34 @@ namespace SharpNES
                 _cancellationTokenSource = new CancellationTokenSource();
 
                 // Start the new emulator task
-                _emulatorTask = Task.Run(() => _emulator.Start());
+                _emulatorTask = Task.Run(() => _emulator.Start(_cancellationTokenSource.Token));
 
                 // Recreate debug windows with the new emulator instance
                 _patternTableViewer = new PatternTableViewer(_emulator);
+                _nametablesViewer = new NametablesViewer(_emulator);
             }
         }
 
         private async Task StopCurrentEmulator()
         {
             // Unsubscribe from the event to prevent further calls
-            _emulator.PPU.FrameCompleted -= OnFrameCompleted;
+            if (_emulator?.PPU != null)
+            {
+                _emulator.PPU.FrameCompleted -= OnFrameCompleted;
+            }
 
             // Stop the emulator
-            _emulator.Stop();
+            _emulator?.Stop();
 
             // Cancel the token to signal frame completion to stop processing
-            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource?.Cancel();
 
             // Wait for the emulator task to complete with a timeout
             if (_emulatorTask != null)
             {
                 try
                 {
-                    await _emulatorTask.WaitAsync(TimeSpan.FromSeconds(5));
+                    await _emulatorTask.WaitAsync(TimeSpan.FromSeconds(2));
                 }
                 catch (TimeoutException)
                 {
@@ -320,10 +326,26 @@ namespace SharpNES
             }
 
             // Dispose the old cancellation token source
-            _cancellationTokenSource.Dispose();
+            _cancellationTokenSource?.Dispose();
 
-            // Destroy debug windows
-            _patternTableViewer.Close();
+            // Close debug windows if they exist
+            try
+            {
+                _patternTableViewer?.Close();
+            }
+            catch (InvalidOperationException)
+            {
+                // Window might already be closed
+            }
+
+            try
+            {
+                _nametablesViewer?.Close();
+            }
+            catch (InvalidOperationException)
+            {
+                // Window might already be closed
+            }
         }
 
         // Debug control button event handlers
@@ -344,7 +366,12 @@ namespace SharpNES
 
         private void PatternTableViewerButton_Click(object sender, RoutedEventArgs e)
         {
-            _patternTableViewer.Show();
+            _patternTableViewer?.Show();
+        }
+
+        private void NametablesViewerButton_Click(object sender, RoutedEventArgs e)
+        {
+            _nametablesViewer?.Show();
         }
 
         private void MainWindow_KeyDown(object sender, KeyEventArgs e)
@@ -373,24 +400,45 @@ namespace SharpNES
             // Stop the emulator properly when closing
             await StopCurrentEmulator();
 
-            // Ensure all child windows are closed
-            foreach (Window window in Application.Current.Windows)
+            // Close any remaining debug windows safely
+            try
             {
-                if (window != this && window.IsLoaded)
+                _patternTableViewer?.Close();
+            }
+            catch (InvalidOperationException)
+            {
+                // Window might already be closed
+            }
+
+            try
+            {
+                _nametablesViewer?.Close();
+            }
+            catch (InvalidOperationException)
+            {
+                // Window might already be closed
+            }
+
+            // Ensure all child windows are closed
+            try
+            {
+                foreach (Window window in Application.Current.Windows.OfType<Window>().ToList())
                 {
-                    window.Close();
+                    if (window != this && window.IsLoaded)
+                    {
+                        window.Close();
+                    }
                 }
+            }
+            catch (InvalidOperationException)
+            {
+                // Collection might be modified during enumeration
             }
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Close();
-        }
-
-        private void MenuItem_Click(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 }

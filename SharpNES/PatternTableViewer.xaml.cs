@@ -19,9 +19,6 @@ namespace SharpNES
 
             _emulator = emulator;
 
-            GeneratePatternTableImage();
-
-
             var timer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(1)

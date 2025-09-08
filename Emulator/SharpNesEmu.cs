@@ -17,6 +17,7 @@ namespace Emulator
         private readonly NesLogger? _logger;
         private ulong _frameCount;
         private bool _isRunning;
+        private CancellationToken _cancellationToken;
 
         public CPU CPU { get; set; }
         public PPU PPU { get; set; }
@@ -45,6 +46,12 @@ namespace Emulator
 
         public void Start()
         {
+            Start(CancellationToken.None);
+        }
+
+        public void Start(CancellationToken cancellationToken)
+        {
+            _cancellationToken = cancellationToken;
             CPU.Reset();
             if (_startAddress > 0)
             {
@@ -59,7 +66,7 @@ namespace Emulator
         public void Run()
         {
             var clock = new Stopwatch();
-            while (true)
+            while (!_cancellationToken.IsCancellationRequested)
             {
                 clock.Restart();
                 if (_isRunning)
@@ -67,9 +74,11 @@ namespace Emulator
                     RenderFrame();
                 }
 
-                Thread.Sleep(MillisecondsPerFrame > clock.Elapsed.TotalMilliseconds
-                    ? (int)(MillisecondsPerFrame - clock.Elapsed.TotalMilliseconds)
-                    : 0);
+                var sleepTime = MillisecondsPerFrame - clock.Elapsed.TotalMilliseconds;
+                if (sleepTime > 0)
+                {
+                    Thread.Sleep((int)sleepTime);
+                }
             }
         }
 
