@@ -4,14 +4,16 @@ namespace NESPPU
     {
         private PPU _ppu;
 
-        internal byte V { get; set; }
-        internal byte T { get; set; }
+        public ushort V { get; set; }
+        internal ushort T { get; set; }
         internal byte X { get; set; }
         internal byte W { get; set; } = 0;
 
         public byte OpenBus { get; set; }
 
         public event EventHandler<byte>? PPUStatusChanged;
+
+        public Flags F { get; set; } = new Flags();
 
         public Registers(PPU ppu)
         {
@@ -41,7 +43,6 @@ namespace NESPPU
                 F.SpriteSize = (value & 0x20) != 0;
                 F.PPUMaster = (value & 0x40) != 0;
                 F.NMIEnabled = (value & 0x80) != 0;
-                W = 0;
             }
         }
 
@@ -115,12 +116,13 @@ namespace NESPPU
             {
                 if (W == 0)
                 {
-                    F.PPUAddress = (ushort)((F.PPUAddress & 0x00FF) | ((value & 0x3F) << 8));
+                    T = (ushort)((T & 0x00FF) | ((value & 0x3F) << 8));
                     W = 1;
                 }
                 else
                 {
-                    F.PPUAddress = (ushort)((F.PPUAddress & 0xFF00) | value);
+                    T = (ushort)((T & 0xFF00) | value);
+                    V = T;
                     W = 0;
                 }
             }
@@ -132,25 +134,25 @@ namespace NESPPU
             get
             {
                 byte value;
-                if (F.PPUAddress < 0x3F00)
+                if (V < 0x3F00)
                 {
                     // Buffered read for everything except palette
                     value = _ppuDataBuffer;
-                    _ppuDataBuffer = _ppu.ReadMemory(F.PPUAddress);
+                    _ppuDataBuffer = _ppu.ReadMemory(V);
                 }
                 else
                 {
                     // Immediate read for palette
-                    value = _ppu.ReadMemory(F.PPUAddress);
-                    _ppuDataBuffer = _ppu.ReadMemory((ushort)(F.PPUAddress - 0x1000)); // Fill buffer with nametable data
+                    value = _ppu.ReadMemory(V);
+                    _ppuDataBuffer = _ppu.ReadMemory((ushort)(V - 0x1000)); // Fill buffer with nametable data
                 }
-                F.PPUAddress += (ushort)(F.IncrementBy32 ? 32 : 1);
+                V += (ushort)(F.IncrementBy32 ? 32 : 1);
                 return value;
             }
             set
             {
-                _ppu.WriteMemory(F.PPUAddress, value);
-                F.PPUAddress += (ushort)(F.IncrementBy32 ? 32 : 1);
+                _ppu.WriteMemory(V, value);
+                V += (ushort)(F.IncrementBy32 ? 32 : 1);
             }
         }
 
@@ -166,8 +168,6 @@ namespace NESPPU
                 _ => OpenBus         // Other registers return open bus
             };
         }
-
-        public Flags F { get; set; } = new Flags();
 
         public class Flags
         {
@@ -234,8 +234,6 @@ namespace NESPPU
 
             public ushort HorizontalScroll { get; set; }
             public ushort VerticalScroll { get; set; }
-
-            public ushort PPUAddress { get; set; }
         }
     }
 }

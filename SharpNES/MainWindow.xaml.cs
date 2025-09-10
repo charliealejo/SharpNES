@@ -85,7 +85,7 @@ namespace SharpNES
             // Basic scroll values
             XScroll.Text = flags.HorizontalScroll.ToString();
             YScroll.Text = flags.VerticalScroll.ToString();
-            PPUAddrText.Text = $"${flags.PPUAddress:X4}";
+            PPUAddrText.Text = $"${registers.V:X4}";
 
             // Status Flags
             VBlankText.Text = flags.VBlank.ToString();
