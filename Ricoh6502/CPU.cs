@@ -300,8 +300,15 @@ namespace Ricoh6502
             else
             {
                 var page = Memory[0x4014];
-                uint offset = _dmaCycle / 2;
-                DMAWrite?.Invoke(this, new MemoryAccessEventArgs(offset, Memory[(ushort)(page * 0x100 + offset)]));
+                
+                // DMA transfers one byte every other cycle
+                if (_dmaCycle % 2 == 1) // Only transfer on odd cycles
+                {
+                    uint oamAddress = (_dmaCycle - 1) / 2;
+                    uint sourceAddress = (uint)(page * 0x100 + oamAddress);
+                    DMAWrite?.Invoke(this, new MemoryAccessEventArgs(oamAddress, Memory[sourceAddress]));
+                }
+                
                 _nextInstructionCycle += 2;
                 _dmaCycle++;
             }

@@ -67,8 +67,11 @@ namespace NESPPU
             }
         }
 
-        private void OnDMAWrite(object? sender, Ricoh6502.MemoryAccessEventArgs e) {
-            _ppu.OAM[e.Register] = e.Value;
+        private void OnDMAWrite(object? sender, Ricoh6502.MemoryAccessEventArgs e) 
+        {
+            // DMA writes should start at the current OAMADDR and wrap around
+            uint targetAddress = (_ppu.Registers.OAMADDR + e.Register) & 0xFF;
+            _ppu.OAM[targetAddress] = e.Value;
         }
     }
 }

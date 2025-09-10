@@ -98,12 +98,12 @@ namespace NESPPU
             {
                 if (W == 0)
                 {
-                    F.HorizontalScroll = (ushort)((_ppuCtrl & 0x1 << 8) | value);
+                    F.HorizontalScroll = value;
                     W = 1;
                 }
                 else
                 {
-                    F.VerticalScroll = (ushort)((_ppuCtrl & 0x2 << 7) | value);
+                    F.VerticalScroll = value;
                     W = 0;
                 }
             }
@@ -115,12 +115,12 @@ namespace NESPPU
             {
                 if (W == 0)
                 {
-                    F.PPUAddress = (ushort)((value & 0x3F) << 8); // Upper 6 bits
+                    F.PPUAddress = (ushort)((F.PPUAddress & 0x00FF) | ((value & 0x3F) << 8));
                     W = 1;
                 }
                 else
                 {
-                    F.PPUAddress += value; // Lower 8 bits
+                    F.PPUAddress = (ushort)((F.PPUAddress & 0xFF00) | value);
                     W = 0;
                 }
             }
