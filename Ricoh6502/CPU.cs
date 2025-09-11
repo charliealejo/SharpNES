@@ -229,10 +229,11 @@ namespace Ricoh6502
 
             if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
             {
-                PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs((uint)(memoryAddress % 8), value));
-                for (ushort addr = 0x2000; addr <= 0x3FFF; addr += 8)
+                var offset = (uint)(memoryAddress % 8);
+                PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs(offset, value));
+                for (ushort addr = 0x2000; addr < 0x4000; addr += 8)
                 {
-                    Memory[addr] = value;
+                    Memory[addr + offset] = value;
                 }
             }
             else if (memoryAddress == 0x4014)
