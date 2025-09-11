@@ -7,7 +7,7 @@ namespace NESPPU
         public ushort V { get; set; }
         internal ushort T { get; set; }
         internal byte X { get; set; }
-        internal byte W { get; set; } = 0;
+        internal bool W { get; set; } = false;
 
         public byte OpenBus { get; set; }
 
@@ -43,6 +43,8 @@ namespace NESPPU
                 F.SpriteSize = (value & 0x20) != 0;
                 F.PPUMaster = (value & 0x40) != 0;
                 F.NMIEnabled = (value & 0x80) != 0;
+                // Bits 10-11 hold the base address of the nametable minus $2000
+                T = (ushort)((T & 0xF3FF) | ((value & 0x3) << 10));
             }
         }
 
@@ -66,14 +68,20 @@ namespace NESPPU
         {
             get
             {
-                byte status = _ppuStatus;
+                byte status = F.CalculatePPUStatus(); // Get bits 7-5 (VBlank, Sprite0Hit, SpriteOverflow)
+                byte result = (byte)((status & 0xE0) | (OpenBus & 0x1F)); // Combine with OpenBus bits 0-4
+                
+                // Update OpenBus with the value we're returning
+                OpenBus = result;
+                
                 F.VBlank = false; // Reading PPUSTATUS clears VBlank flag
-                W = 0; // Also resets the write toggle
-                return status;
+                W = false; // Also resets the write toggle
+                return result;
             }
             set
             {
                 _ppuStatus = value;
+                OpenBus = value; // Update OpenBus on write
                 PPUStatusChanged?.Invoke(this, value);
             }
         }
@@ -84,11 +92,14 @@ namespace NESPPU
         {
             get 
             { 
-                return _ppu.OAM[OAMADDR]; 
+                byte value = _ppu.OAM[OAMADDR];
+                OpenBus = value; // Update OpenBus with read value
+                return value;
             }
             set
             {
                 _ppu.OAM[OAMADDR] = value;
+                OpenBus = value; // Update OpenBus on write
                 OAMADDR++;
             }
         }
@@ -97,15 +108,19 @@ namespace NESPPU
         {
             set
             {
-                if (W == 0)
+                if (W)
                 {
-                    F.HorizontalScroll = value;
-                    W = 1;
+                    T = (ushort)((T & 0x8FFF) | ((value & 0x7) << 12));
+                    T = (ushort)((T & 0xFC1F) | (value & 0xF8) << 2);
+                    F.VerticalScroll = value;
+                    W = false;
                 }
                 else
-                {
-                    F.VerticalScroll = value;
-                    W = 0;
+                {   
+                    X = (byte)(value & 0x7);
+                    T = (ushort)((T & 0xFFE0) | (value >> 3));
+                    F.HorizontalScroll = value;
+                    W = true;
                 }
             }
         }
@@ -114,16 +129,18 @@ namespace NESPPU
         {
             set
             {
-                if (W == 0)
-                {
-                    T = (ushort)((T & 0x00FF) | ((value & 0x3F) << 8));
-                    W = 1;
-                }
-                else
+                if (W)
                 {
                     T = (ushort)((T & 0xFF00) | value);
                     V = T;
-                    W = 0;
+                    W = false;
+                    // Prime the read buffer when address is set
+                    _ppuDataBuffer = _ppu.ReadMemory(V);
+                }
+                else
+                {
+                    T = (ushort)((T & 0x00FF) | ((value & 0x3F) << 8));
+                    W = true;
                 }
             }
         }
@@ -146,12 +163,15 @@ namespace NESPPU
                     value = _ppu.ReadMemory(V);
                     _ppuDataBuffer = _ppu.ReadMemory((ushort)(V - 0x1000)); // Fill buffer with nametable data
                 }
+                
+                OpenBus = value; // Update OpenBus with read value
                 V += (ushort)(F.IncrementBy32 ? 32 : 1);
                 return value;
             }
             set
             {
                 _ppu.WriteMemory(V, value);
+                OpenBus = value; // Update OpenBus on write
                 V += (ushort)(F.IncrementBy32 ? 32 : 1);
             }
         }
@@ -160,13 +180,22 @@ namespace NESPPU
 
         public byte HandleRegisterRead(uint registerIndex)
         {
-            return registerIndex switch
+            byte result = registerIndex switch
             {
-                0x2 => PPUSTATUS,    // $2002
-                0x4 => OAMDATA,      // $2004  
-                0x7 => PPUDATA,      // $2007
-                _ => OpenBus         // Other registers return open bus
+                0x2 => PPUSTATUS,    // $2002 - handles OpenBus internally
+                0x4 => OAMDATA,      // $2004 - handles OpenBus internally  
+                0x7 => PPUDATA,      // $2007 - handles OpenBus internally
+                _ => OpenBus         // Other registers return current OpenBus value
             };
+            
+            // For write-only registers, still return OpenBus but don't modify it
+            if (registerIndex == 0x0 || registerIndex == 0x1 || registerIndex == 0x3 || 
+                registerIndex == 0x5 || registerIndex == 0x6)
+            {
+                return OpenBus; // Return current OpenBus without modification
+            }
+            
+            return result;
         }
 
         public class Flags

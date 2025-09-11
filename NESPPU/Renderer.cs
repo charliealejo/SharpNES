@@ -102,7 +102,10 @@ namespace NESPPU
                 }
                 
                 // Detect sprite 0 hit
-                if (isSprite0 && backgroundColor != 0 && x < 255)
+                if (isSprite0 &&
+                    backgroundColor != 0 &&
+                    !(x < 8 && !_ppu.Registers.F.ShowSpritesLeft) &&
+                    x < 255)
                 {
                     _ppu.Registers.F.Sprite0Hit = true;
                 }
