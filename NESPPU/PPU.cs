@@ -36,8 +36,8 @@ namespace NESPPU
 
         public byte ReadMemory(ushort address)
         {
-            address = MirrorAddress(address);
-            return _memory[address];
+            ushort mirrorAddress = MirrorAddress(address);
+            return _memory[mirrorAddress];
         }
 
         public void WriteMemory(ushort address, byte value)
@@ -48,6 +48,11 @@ namespace NESPPU
 
         private ushort MirrorAddress(ushort address)
         {
+            if (address >= 0x4000)
+            {
+                address = (ushort)(address % 0x4000);
+            }
+
             // Handle PPU memory mirroring
             if (address >= 0x3000 && address <= 0x3EFF)
             {
@@ -61,13 +66,13 @@ namespace NESPPU
             }
 
             // Handle palette mirroring at $3F10, $3F14, $3F18, $3F1C
-            else if (address == 0x3F10) address = 0x3F00;
+            if (address == 0x3F10) address = 0x3F00;
             else if (address == 0x3F14) address = 0x3F04;
             else if (address == 0x3F18) address = 0x3F08;
             else if (address == 0x3F1C) address = 0x3F0C;
 
             // Handle nametable mirroring ($2000-$2FFF)
-            else if (address >= 0x2000 && address <= 0x2FFF)
+            if (address >= 0x2000 && address <= 0x2FFF)
             {
                 address = MirrorNametable(address);
             }

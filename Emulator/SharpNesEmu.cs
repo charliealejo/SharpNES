@@ -15,7 +15,6 @@ namespace Emulator
         private readonly bool _debugMode;
         private readonly ushort _startAddress;
         private readonly NesLogger? _logger;
-        private ulong _frameCount;
         private bool _isRunning;
         private CancellationToken _cancellationToken;
 
@@ -40,8 +39,6 @@ namespace Emulator
 
             var memoryBus = new MemoryBus(CPU, PPU);
             memoryBus.Initialize();
-
-            _frameCount = 0;
         }
 
         public void Start()
@@ -86,7 +83,8 @@ namespace Emulator
         {
             for (int i = 0; i < PPU.ScanLines * PPU.Dots; i++)
             {
-                if (_frameCount++ % 3 == 0)
+                PPU.Clock();
+                if (i % 3 == 0)
                 {
                     if (_debugMode && CPU.IsCycleExecutingCommand())
                     {
@@ -94,7 +92,6 @@ namespace Emulator
                     }
                     CPU.Clock();
                 }
-                PPU.Clock();
             }
         }
 

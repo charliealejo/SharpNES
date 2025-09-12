@@ -165,7 +165,7 @@ namespace Ricoh6502
                 AddressingMode.Absolute => BitConverter.ToUInt16([d1, d2], 0),
                 AddressingMode.AbsoluteX => (ushort)(BitConverter.ToUInt16([d1, d2], 0) + X),
                 AddressingMode.AbsoluteY => (ushort)(BitConverter.ToUInt16([d1, d2], 0) + Y),
-                AddressingMode.Indirect => Memory[BitConverter.ToUInt16([d1, d2], 0)],
+                AddressingMode.Indirect => GetIndirectMemoryAddress(d1, d2),
                 AddressingMode.IndirectX => BitConverter.ToUInt16([Memory[(byte)(d1 + X)], Memory[(byte)(d1 + X + 1)]], 0),
                 AddressingMode.IndirectY => (ushort)(BitConverter.ToUInt16([Memory[d1], Memory[(byte)(d1 + 1)]], 0) + Y),
                 _ => throw new ArgumentOutOfRangeException(nameof(addressingMode), addressingMode, null),
@@ -184,10 +184,6 @@ namespace Ricoh6502
             }
 
             var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
-            if (addressingMode == AddressingMode.Indirect)
-            {
-                memoryAddress = GetIndirectMemoryAddress(d1, d2);
-            }
 
             // Handle PPU register reads
             if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
@@ -222,10 +218,6 @@ namespace Ricoh6502
             }
 
             var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
-            if (addressingMode == AddressingMode.Indirect)
-            {
-                memoryAddress = GetIndirectMemoryAddress(d1, d2);
-            }
 
             if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
             {
