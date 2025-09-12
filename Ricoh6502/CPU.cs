@@ -161,7 +161,7 @@ namespace Ricoh6502
                 AddressingMode.ZeroPage => (ushort)(d1 & 0x00FF),
                 AddressingMode.ZeroPageX => (byte)(d1 + X),
                 AddressingMode.ZeroPageY => (byte)(d1 + Y),
-                AddressingMode.Relative => (byte)(PC + (sbyte)d1),
+                AddressingMode.Relative => (ushort)(PC + (sbyte)d1),
                 AddressingMode.Absolute => BitConverter.ToUInt16([d1, d2], 0),
                 AddressingMode.AbsoluteX => (ushort)(BitConverter.ToUInt16([d1, d2], 0) + X),
                 AddressingMode.AbsoluteY => (ushort)(BitConverter.ToUInt16([d1, d2], 0) + Y),
