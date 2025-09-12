@@ -108,6 +108,13 @@ namespace SharpNES
             // Try to update additional fields if they exist in XAML
             try
             {
+                // Buttons pressed
+                if (FindName("ButtonsText") is TextBlock buttonsPressedText)
+                {
+                    var pressedButtons = (byte)_emulator.NesController.CurrentButtons;
+                    buttonsPressedText.Text = $"${pressedButtons:X2}";
+                }
+
                 // Timing Information
                 if (FindName("ScanLineText") is TextBlock scanLineText)
                     scanLineText.Text = ppu.ScanLine.ToString();

@@ -22,17 +22,13 @@ public enum NesControllerButtons : byte
 /// </summary>
 public class NesController
 {
-    private const ushort Controller1Address = 0x4016;
-    private const ushort Controller2Address = 0x4017;
-
     private NesControllerButtons _currentButtons = NesControllerButtons.None;
     private byte _shiftRegister;
-    private int _readCount;
+    private bool _strobing;
 
     public NesController()
     {
         _shiftRegister = 0;
-        _readCount = 0;
     }
 
     /// <summary>
@@ -45,36 +41,25 @@ public class NesController
     }
 
     /// <summary>
-    /// Called when CPU writes to $4016 (strobe)
+    /// Called when CPU writes to $4016 or $4017 (strobe)
     /// </summary>
-    /// <param name="value">Value written (1 = start strobe, 0 = end strobe and latch)</param>
     public void WriteStrobe(byte value)
     {
-        if (value == 0) // End of strobe - latch current button state
-        {
-            _shiftRegister = (byte)_currentButtons;
-            _readCount = 0;
-        }
+        _strobing = (value & 0x01) != 0;
+        _shiftRegister = (byte)_currentButtons;
     }
 
     public byte ReadButtonState()
     {
-        byte result;
+        byte result = (byte)(_shiftRegister & 1);
         
-        if (_readCount < 8)
+        if (!_strobing)
         {
-            // Return LSB and shift right for next read
-            result = (byte)(_shiftRegister & 1);
+            // Shift right for next read
             _shiftRegister >>= 1;
-            _readCount++;
         }
-        else
-        {
-            // After 8 reads, return 1 (standard behavior)
-            result = 1;
-        }
-        
-        return result;
+
+        return (byte)(result | 0x40); // Bit 6 is always high
     }
 
     /// <summary>

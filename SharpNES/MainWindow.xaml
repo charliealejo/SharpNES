@@ -75,6 +75,10 @@
                             <TextBlock Text="N: B Button"/>
                             <TextBlock Text="Enter: Start"/>
                             <TextBlock Text="Space: Select"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Buttons: " Width="80"/>
+                                <TextBlock x:Name="ButtonsText" Text="0" FontFamily="Consolas"/>
+                            </StackPanel>
                         </StackPanel>
                     </GroupBox>
 

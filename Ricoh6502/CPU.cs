@@ -235,7 +235,7 @@ namespace Ricoh6502
             }
             else if (memoryAddress == 0x4016)
             {
-                _nesController.WriteStrobe((byte)(value & 0x01));
+                _nesController.WriteStrobe((byte)(value & 0x07));
             }
 
             // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
