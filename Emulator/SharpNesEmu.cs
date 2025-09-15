@@ -83,7 +83,6 @@ namespace Emulator
         {
             for (int i = 0; i < PPU.ScanLines * PPU.Dots; i++)
             {
-                PPU.Clock();
                 if (i % 3 == 0)
                 {
                     if (_debugMode && CPU.IsCycleExecutingCommand())
@@ -92,6 +91,7 @@ namespace Emulator
                     }
                     CPU.Clock();
                 }
+                PPU.Clock();
             }
         }
 
@@ -130,7 +130,7 @@ namespace Emulator
             var addMode = command.AddressingMode;
             string b1 = addMode == AddressingMode.Implied ? "  " : $"{d1:X2}";
             string b2 = new[] { AddressingMode.Absolute, AddressingMode.AbsoluteX, AddressingMode.AbsoluteY, AddressingMode.Indirect }.Contains(addMode) ? $"{d2:X2}" : "  ";
-            string logLine = $"{CPU.PC:X4}  {opcode:X2} {b1} {b2}  {command.GetType().Name} {ParseAddress(d1, d2, addMode),-26}  A:{CPU.Acc:X2} X:{CPU.X:X2} Y:{CPU.Y:X2} P:{CPU.Status.GetStatus():X2} SP:{CPU.SP:X2} PPU:{PPU.ScanLine,3},{PPU.Dot,3} CYC:{CPU.Cycles}";
+            string logLine = $"{command.GetType().Name} {ParseAddress(d1, d2, addMode),-26} PPU:{PPU.ScanLine,3},{PPU.Dot,3}";
             _logger!.Log(logLine);
         }
 

@@ -7,7 +7,8 @@ namespace NESPPU
         public ushort V { get; set; }
         internal ushort T { get; set; }
         internal byte X { get; set; }
-        internal bool W { get; set; } = false;
+        internal bool WS { get; set; } = false;
+        internal bool WA { get; set; } = false;
 
         public byte OpenBus { get; set; }
 
@@ -75,7 +76,8 @@ namespace NESPPU
                 OpenBus = result;
                 
                 F.VBlank = false; // Reading PPUSTATUS clears VBlank flag
-                W = false; // Also resets the write toggle
+                WS = false; // Also resets the write toggle
+                WA = false; // Reset address latch as well
                 return result;
             }
             set
@@ -108,19 +110,19 @@ namespace NESPPU
         {
             set
             {
-                if (W)
+                if (WS)
                 {
                     T = (ushort)((T & 0x8FFF) | ((value & 0x7) << 12));
                     T = (ushort)((T & 0xFC1F) | (value & 0xF8) << 2);
                     F.VerticalScroll = value;
-                    W = false;
+                    WS = false;
                 }
                 else
                 {   
                     X = (byte)(value & 0x7);
                     T = (ushort)((T & 0xFFE0) | (value >> 3));
                     F.HorizontalScroll = value;
-                    W = true;
+                    WS = true;
                 }
             }
         }
@@ -129,11 +131,11 @@ namespace NESPPU
         {
             set
             {
-                if (W)
+                if (WA)
                 {
                     T = (ushort)((T & 0xFF00) | value);
                     V = T;
-                    W = false;
+                    WA = false;
             
                     // Only prime the read buffer if not during rendering
                     if (!_ppu.IsRenderingActive())
@@ -144,7 +146,7 @@ namespace NESPPU
                 else
                 {
                     T = (ushort)((T & 0x00FF) | ((value & 0x3F) << 8));
-                    W = true;
+                    WA = true;
                 }
             }
         }
