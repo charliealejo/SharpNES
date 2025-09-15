@@ -85,6 +85,8 @@ namespace Ricoh6502
 
             if (_executeDMA)
             {
+                // Write 0 to OAMADDR ($2003) before starting DMA
+                SetValue(AddressingMode.Absolute, 0x03, 0x20, 0);
                 PerformDMA();
                 return;
             }

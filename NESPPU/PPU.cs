@@ -43,14 +43,30 @@ namespace NESPPU
         public void WriteMemory(ushort address, byte value)
         {
             address = MirrorAddress(address);
+            if (address < 0x2000)
+            {
+                // CHR ROM/RAM area - typically read-only, check for access here
+                Console.WriteLine($"Warning: Attempt to write to CHR ROM/RAM at {address:X4}");
+            }
             _memory[address] = value;
+        }
+
+        public bool IsRenderingActive()
+        {
+            // Rendering is active during scanlines 0-239 (visible scanlines) and 261 (pre-render)
+            // But not during VBlank (scanlines 241-260)
+            bool visibleScanlines = ScanLine >= 0 && ScanLine <= 239;
+            bool preRenderScanline = ScanLine == 261;
+            bool renderingEnabled = Registers.F.ShowBackground || Registers.F.ShowSprites;
+            
+            return (visibleScanlines || preRenderScanline) && renderingEnabled;
         }
 
         private ushort MirrorAddress(ushort address)
         {
             if (address >= 0x4000)
             {
-                address = (ushort)(address % 0x4000);
+                address = (ushort)(address & 0x3FFF);
             }
 
             // Handle PPU memory mirroring

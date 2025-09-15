@@ -42,7 +42,9 @@ namespace SharpNES
                 { Key.S, NesControllerButtons.Down },
                 { Key.A, NesControllerButtons.Left },
                 { Key.D, NesControllerButtons.Right },
-                // Arrow keys as alternative
+                // Arrow keys and X,Z as alternative
+                { Key.X, NesControllerButtons.A },
+                { Key.Z, NesControllerButtons.B },
                 { Key.Up, NesControllerButtons.Up },
                 { Key.Down, NesControllerButtons.Down },
                 { Key.Left, NesControllerButtons.Left },

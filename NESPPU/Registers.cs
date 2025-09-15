@@ -134,8 +134,12 @@ namespace NESPPU
                     T = (ushort)((T & 0xFF00) | value);
                     V = T;
                     W = false;
-                    // Prime the read buffer when address is set
-                    _ppuDataBuffer = _ppu.ReadMemory(V);
+            
+                    // Only prime the read buffer if not during rendering
+                    if (!_ppu.IsRenderingActive())
+                    {
+                        _ppuDataBuffer = _ppu.ReadMemory(V);
+                    }
                 }
                 else
                 {
@@ -150,6 +154,15 @@ namespace NESPPU
         {
             get
             {
+                // Check if VRAM access is allowed
+                if (_ppu.IsRenderingActive())
+                {
+                    // During rendering, PPUDATA reads return open bus and increment is corrupted
+                    // Return current open bus value without accessing VRAM
+                    Console.WriteLine($"Warning: PPUDATA read during rendering at scanline {_ppu.ScanLine}, dot {_ppu.Dot}");
+                    return OpenBus;
+                }
+
                 byte value;
                 if (V < 0x3F00)
                 {
@@ -170,6 +183,15 @@ namespace NESPPU
             }
             set
             {
+                // Check if VRAM access is allowed
+                if (_ppu.IsRenderingActive())
+                {
+                    // During rendering, PPUDATA writes are ignored or corrupted
+                    Console.WriteLine($"Warning: PPUDATA write blocked during rendering at scanline {_ppu.ScanLine}, dot {_ppu.Dot}");
+                    OpenBus = value; // Still update open bus
+                    return; // Block the write
+                }
+
                 _ppu.WriteMemory(V, value);
                 OpenBus = value; // Update OpenBus on write
                 V += (ushort)(F.IncrementBy32 ? 32 : 1);
