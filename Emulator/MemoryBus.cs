@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using InputDevices;
+using NESAPU;
 using Ricoh6502;
 
 namespace NESPPU
@@ -8,18 +9,23 @@ namespace NESPPU
     {
         private readonly CPU _cpu;
         private readonly PPU _ppu;
+        private readonly APU _apu;
 
-        public MemoryBus(CPU cpu, PPU ppu)
+        public MemoryBus(CPU cpu, PPU ppu, APU apu)
         {
             _cpu = cpu ?? throw new ArgumentNullException(nameof(cpu));
             _ppu = ppu ?? throw new ArgumentNullException(nameof(ppu));
+            _apu = apu ?? throw new ArgumentNullException(nameof(apu));
         }
 
         public void Initialize()
         {
-            _cpu.PPURegisterAccessed += OnPPURegisterAccessed;
+            _cpu.PPURegisterWrite += OnPPURegisterAccessed;
             _cpu.PPURegisterRead += (sender, args) => args.Value = _ppu.Registers.HandleRegisterRead(args.Register);
             _cpu.DMAWrite += OnDMAWrite;
+            _cpu.APURegisterWrite += (s, e) => _apu.HandleRegisterWrite(e.Register, e.Value);
+            _cpu.APURegisterRead += (s, e) => e.Value = _apu.HandleRegisterRead(e.Register);
+
             _ppu.Registers.PPUStatusChanged += (s, e) =>
             {
                 for (ushort addr = 0x2002; addr <= 0x3FFF; addr += 8)
@@ -30,6 +36,11 @@ namespace NESPPU
             _ppu.TriggerNMI += (s, e) =>
             {
                 _cpu.NMI();
+            };
+
+            _apu.FrameInterrupt += (s, e) =>
+            {
+                _cpu.IRQ();
             };
         }
 

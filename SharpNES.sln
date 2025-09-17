@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpNES", "SharpNES\SharpN
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InputDevices", "InputDevices\InputDevices.csproj", "{E8F2B4C1-7D3A-4B5E-9F8C-2A1B3C4D5E6F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NESAPU", "NESAPU\NESAPU.csproj", "{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,6 +127,18 @@ Global
 		{E8F2B4C1-7D3A-4B5E-9F8C-2A1B3C4D5E6F}.Release|x64.Build.0 = Release|Any CPU
 		{E8F2B4C1-7D3A-4B5E-9F8C-2A1B3C4D5E6F}.Release|x86.ActiveCfg = Release|Any CPU
 		{E8F2B4C1-7D3A-4B5E-9F8C-2A1B3C4D5E6F}.Release|x86.Build.0 = Release|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Debug|x64.Build.0 = Debug|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Debug|x86.Build.0 = Debug|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Release|x64.ActiveCfg = Release|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Release|x64.Build.0 = Release|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Release|x86.ActiveCfg = Release|Any CPU
+		{0B44B3A4-16F5-4E3B-8B37-5A365E890A8E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

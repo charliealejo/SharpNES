@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Cartridge\Cartridge.csproj" />
     <ProjectReference Include="..\Logger\Logger.csproj" />
+    <ProjectReference Include="..\NESAPU\NESAPU.csproj" />
     <ProjectReference Include="..\Ricoh6502\Ricoh6502.csproj" />
     <ProjectReference Include="..\NESPPU\NESPPU.csproj" />
     <ProjectReference Include="..\InputDevices\InputDevices.csproj" />

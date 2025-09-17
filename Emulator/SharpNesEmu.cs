@@ -2,6 +2,8 @@
 using Cartridge;
 using InputDevices;
 using Logger;
+using NAudio.Wave;
+using NESAPU;
 using NESPPU;
 using Ricoh6502;
 using Ricoh6502.Commands;
@@ -17,28 +19,56 @@ namespace Emulator
         private readonly NesLogger? _logger;
         private bool _isRunning;
         private CancellationToken _cancellationToken;
+        
+        private WaveOutEvent? _waveOut;
+        private bool _audioEnabled;
 
         public CPU CPU { get; set; }
         public PPU PPU { get; set; }
+        public APU APU { get; set; }
         public NesController NesController { get; set; }
 
         public SharpNesEmu(
             string romPath,
             bool debug = false,
-            ushort startAddress = 0)
+            ushort startAddress = 0,
+            bool enableAudio = true) // Add audio enable parameter
         {
             _debugMode = debug;
             _logger = debug ? new NesLogger() : null;
+            _audioEnabled = enableAudio;
 
             NesController = new NesController();
             CPU = new CPU(NesController);
             PPU = new PPU();
+            APU = new APU();
             var cartridge = Loader.LoadCartridge(romPath, CPU.Memory, PPU.Memory);
             PPU.Mirroring = cartridge.Mirroring;
             _startAddress = startAddress;
 
-            var memoryBus = new MemoryBus(CPU, PPU);
+            var memoryBus = new MemoryBus(CPU, PPU, APU);
             memoryBus.Initialize();
+            
+            // Initialize audio playback
+            InitializeAudio();
+        }
+
+        private void InitializeAudio()
+        {
+            if (!_audioEnabled) return;
+            
+            try
+            {
+                _waveOut = new WaveOutEvent();
+                _waveOut.Init(APU);
+                _waveOut.Play();
+            }
+            catch (Exception ex)
+            {
+                // Handle audio initialization failure gracefully
+                Console.WriteLine($"Audio initialization failed: {ex.Message}");
+                _audioEnabled = false;
+            }
         }
 
         public void Start()
@@ -55,6 +85,7 @@ namespace Emulator
                 CPU.PC = _startAddress;
             }
             PPU.Reset();
+            APU.Reset();
 
             _isRunning = true;
             Run();
@@ -92,12 +123,19 @@ namespace Emulator
                     CPU.Clock();
                 }
                 PPU.Clock();
+                
+                // Clock the APU at CPU frequency / 2 (approximately)
+                if (i % 6 == 0) // Every other CPU cycle
+                {
+                    APU.Clock();
+                }
             }
         }
 
         public void Pause()
         {
             _isRunning = false;
+            _waveOut?.Pause();
         }
 
         public void Resume()
@@ -105,6 +143,7 @@ namespace Emulator
             if (!_isRunning)
             {
                 _isRunning = true;
+                _waveOut?.Play();
             }
         }
 
@@ -118,6 +157,29 @@ namespace Emulator
         {
             _isRunning = false;
             _logger?.Dispose();
+            
+            // Clean up audio resources
+            _waveOut?.Stop();
+            _waveOut?.Dispose();
+        }
+
+        // Add methods to control audio
+        public void EnableAudio()
+        {
+            if (!_audioEnabled && _waveOut == null)
+            {
+                _audioEnabled = true;
+                InitializeAudio();
+            }
+            else
+            {
+                _waveOut?.Play();
+            }
+        }
+
+        public void DisableAudio()
+        {
+            _waveOut?.Pause();
         }
 
         private void WriteLog()
@@ -130,7 +192,7 @@ namespace Emulator
             var addMode = command.AddressingMode;
             string b1 = addMode == AddressingMode.Implied ? "  " : $"{d1:X2}";
             string b2 = new[] { AddressingMode.Absolute, AddressingMode.AbsoluteX, AddressingMode.AbsoluteY, AddressingMode.Indirect }.Contains(addMode) ? $"{d2:X2}" : "  ";
-            string logLine = $"{command.GetType().Name} {ParseAddress(d1, d2, addMode),-26} PPU:{PPU.ScanLine,3},{PPU.Dot,3}";
+            string logLine = $"{CPU.PC:X4}  {opcode:X2} {b1} {b2}  {command.GetType().Name} {ParseAddress(d1, d2, addMode),-26}  A:{CPU.Acc:X2} X:{CPU.X:X2} Y:{CPU.Y:X2} P:{CPU.Status.GetStatus():X2} SP:{CPU.SP:X2} PPU:{PPU.ScanLine,3},{PPU.Dot,3} CYC:{CPU.Cycles}";
             _logger!.Log(logLine);
         }
 

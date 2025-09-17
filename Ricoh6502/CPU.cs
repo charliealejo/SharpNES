@@ -5,6 +5,8 @@ namespace Ricoh6502
 {
     public class CPU
     {
+        private readonly NesController _nesController;
+
         private bool _interrupt;
 
         private bool _nonMaskableInterrupt;
@@ -17,15 +19,17 @@ namespace Ricoh6502
 
         private uint _nextInstructionCycle;
 
-        private NesController _nesController;
-
         public uint Cycles { get; private set; }
 
-        public event EventHandler<MemoryAccessEventArgs>? PPURegisterAccessed;
+        public event EventHandler<MemoryAccessEventArgs>? PPURegisterWrite;
 
         public event EventHandler<MemoryAccessEventArgs>? PPURegisterRead;
 
         public event EventHandler<MemoryAccessEventArgs>? DMAWrite;
+
+        public event EventHandler<MemoryAccessEventArgs>? APURegisterWrite;
+
+        public event EventHandler<MemoryAccessEventArgs>? APURegisterRead;
 
         public CPU(NesController nesController)
         {
@@ -195,11 +199,20 @@ namespace Ricoh6502
                 PPURegisterRead?.Invoke(this, args);
                 return args.Value; // Return the value set by the PPU
             }
+            // Handle controller reads
             else if (memoryAddress == 0x4016 || memoryAddress == 0x4017)
             {
                 var buttonState = _nesController.ReadButtonState();
                 Memory[memoryAddress] = buttonState;
                 return buttonState;
+            }
+            // Handle APU register reads
+            else if (memoryAddress == 0x4015 || memoryAddress == 0x4017)
+            {
+                var apuRegister = (uint)(memoryAddress - 0x4000);
+                var args = new MemoryAccessEventArgs(apuRegister, 0);
+                APURegisterRead?.Invoke(this, args);
+                return args.Value; // Return the value set by the APU
             }
 
             // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
@@ -221,23 +234,32 @@ namespace Ricoh6502
 
             var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
 
+            // Handle PPU register writes
             if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
             {
                 var offset = (uint)(memoryAddress % 8);
-                PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs(offset, value));
+                PPURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(offset, value));
                 for (ushort addr = 0x2000; addr < 0x4000; addr += 8)
                 {
                     Memory[addr + offset] = value;
                 }
             }
+            // Handle DMA writes
             else if (memoryAddress == 0x4014)
             {
-                PPURegisterAccessed?.Invoke(this, new MemoryAccessEventArgs(0x14, value));
+                PPURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(0x14, value));
                 _executeDMA = true;
             }
+            // Handle NES controller strobe writes
             else if (memoryAddress == 0x4016)
             {
                 _nesController.WriteStrobe((byte)(value & 0x07));
+            }
+            // Handle APU register writes
+            else if (memoryAddress >= 0x4000 && memoryAddress <= 0x4013 || memoryAddress == 0x4015 || memoryAddress == 0x4017)
+            {
+                var apuRegister = (uint)(memoryAddress - 0x4000);
+                APURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(apuRegister, value));
             }
 
             // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
