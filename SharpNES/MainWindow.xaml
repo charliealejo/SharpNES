@@ -22,9 +22,9 @@
                 <MenuItem Header="_Exit" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="_Debug">
-                <MenuItem Header="_Pause" Click="PauseButton_Click"/>
-                <MenuItem Header="_Resume" Click="ResumeButton_Click"/>
-                <MenuItem Header="_Step" Click="StepButton_Click"/>
+                <MenuItem x:Name="PauseMenuItem" Header="_Pause" Click="PauseButton_Click" InputGestureText="F5"/>
+                <MenuItem x:Name="ResumeMenuItem" Header="_Resume" Click="ResumeButton_Click" InputGestureText="F5"/>
+                <MenuItem Header="_Step" Click="StepButton_Click" InputGestureText="F10"/>
                 <Separator/>
                 <MenuItem Header="Pattern _Table Viewer" Click="PatternTableViewerButton_Click"/>
                 <MenuItem Header="_Nametables Viewer" Click="NametablesViewerButton_Click"/>
@@ -43,128 +43,6 @@
                    Stretch="Uniform"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"/>
-
-            <!-- Right Panel with Debug Information -->
-            <!-- <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!- - Debug Controls Section - - >
-                    <GroupBox Grid.Row="0" Header="Debug Controls" Margin="0,0,0,10">
-                        <StackPanel Orientation="Horizontal" Margin="5" HorizontalAlignment="Center">
-                            <Button x:Name="PauseButton" Content="Pause" Width="60" Height="30" Margin="5,0" Click="PauseButton_Click"/>
-                            <Button x:Name="ResumeButton" Content="Resume" Width="60" Height="30" Margin="5,0" Click="ResumeButton_Click"/>
-                            <Button x:Name="StepButton" Content="Step" Width="60" Height="30" Margin="5,0" Click="StepButton_Click"/>
-                        </StackPanel>
-                    </GroupBox>
-
-                    <!- - Controls Section - ->
-                    <GroupBox Grid.Row="1" Header="Controls" Margin="0,0,0,10">
-                        <StackPanel Margin="5">
-                            <TextBlock Text="WASD/Arrows: Move"/>
-                            <TextBlock Text="M: A Button"/>
-                            <TextBlock Text="N: B Button"/>
-                            <TextBlock Text="Enter: Start"/>
-                            <TextBlock Text="Space: Select"/>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Buttons: " Width="80"/>
-                                <TextBlock x:Name="ButtonsText" Text="0" FontFamily="Consolas"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </GroupBox>
-
-                    <!- - PPU Timing Section - ->
-                    <GroupBox Grid.Row="2" Header="PPU Timing" Margin="0,0,0,10">
-                        <StackPanel Margin="5">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Scanline: " Width="80"/>
-                                <TextBlock x:Name="ScanLineText" Text="0" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Dot: " Width="80"/>
-                                <TextBlock x:Name="DotText" Text="0" FontFamily="Consolas"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </GroupBox>
-
-                    <!- - PPU Registers Section - ->
-                    <GroupBox Grid.Row="3" Header="PPU Registers" Margin="0,0,0,10">
-                        <StackPanel Margin="5">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="X Scroll: " Width="80"/>
-                                <TextBlock x:Name="XScroll" Text="0" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Y Scroll: " Width="80"/>
-                                <TextBlock x:Name="YScroll" Text="0" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="PPU Addr: " Width="80"/>
-                                <TextBlock x:Name="PPUAddrText" Text="$0000" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="PPUSTATUS: " Width="80"/>
-                                <TextBlock x:Name="PPUStatusText" Text="$00" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="OAMADDR: " Width="80"/>
-                                <TextBlock x:Name="OAMAddrText" Text="$00" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Base NT: " Width="80"/>
-                                <TextBlock x:Name="BaseNametableText" Text="$2000" FontFamily="Consolas"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </GroupBox>
-
-                    <!- - Current Tile Information - ->
-                    <GroupBox Grid.Row="4" Header="Current Tile Info" Margin="0,0,0,10">
-                        <StackPanel Margin="5">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Tile X: " Width="90"/>
-                                <TextBlock x:Name="CurrentTileXText" Text="-" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Tile Y: " Width="90"/>
-                                <TextBlock x:Name="CurrentTileYText" Text="-" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Nametable: " Width="90"/>
-                                <TextBlock x:Name="CurrentNametableText" Text="$- - - -" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Tile Index: " Width="90"/>
-                                <TextBlock x:Name="TileIndexText" Text="$- -" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Tile Addr: " Width="90"/>
-                                <TextBlock x:Name="TileAddressText" Text="$- - - -" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Attr Data: " Width="90"/>
-                                <TextBlock x:Name="AttributeDataText" Text="$- -" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Attr Addr: " Width="90"/>
-                                <TextBlock x:Name="AttributeAddrText" Text="$- - - -" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Palette Addr: " Width="90"/>
-                                <TextBlock x:Name="PaletteAddrText" Text="$- - - -" FontFamily="Consolas"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </GroupBox>
-                </Grid>
-            </ScrollViewer> -->
         </Grid>
     </Grid>
 </Window>

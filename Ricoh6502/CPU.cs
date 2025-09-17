@@ -202,8 +202,8 @@ namespace Ricoh6502
 
             var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
 
-            // Dispatch directo por rango - no más condicionales!
-            int handlerIndex = memoryAddress >> 13; // Divide por 8192 para obtener el handler correcto
+            // Direct dispatch by range - no more conditions!
+            int handlerIndex = memoryAddress >> 13; // Divide by 8192 to get the correct handler
             return _readHandlers[handlerIndex](memoryAddress);
         }
 
@@ -218,8 +218,8 @@ namespace Ricoh6502
 
             var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
 
-            // Dispatch directo por rango - no más condicionales!
-            int handlerIndex = memoryAddress >> 13; // Divide por 8192 para obtener el handler correcto
+            // Direct dispatch by range - no more conditions!
+            int handlerIndex = memoryAddress >> 13; // Divide by 8192 to get the correct handler
             _writeHandlers[handlerIndex](memoryAddress, value);
         }
 
@@ -323,7 +323,7 @@ namespace Ricoh6502
             {
                 var offset = (uint)(address % 8);
                 PPURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(offset, value));
-                // Actualizar todas las mirrors de una vez
+                // Update all mirrors at once
                 for (ushort addr = 0x2000; addr < 0x4000; addr += 8)
                 {
                     Memory[addr + offset] = value;
@@ -334,7 +334,7 @@ namespace Ricoh6502
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private byte ReadIO(ushort address)
         {
-            if (address == 0x4016 || address == 0x4017)
+            if (address == 0x4016)
             {
                 var buttonState = _nesController.ReadButtonState();
                 Memory[address] = buttonState;
@@ -355,7 +355,7 @@ namespace Ricoh6502
         {
             if (address == 0x4014)
             {
-                WritePPU(address, value); // DMA es una función PPU
+                WritePPU(address, value); // DMA is a PPU function
             }
             else if (address == 0x4016)
             {

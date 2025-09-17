@@ -39,8 +39,8 @@ namespace NESAPU
             _sampleRate = sampleRate;
             WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat((int)sampleRate, 1);
             
-            _pulse1 = new Pulse(sampleRate);
-            _pulse2 = new Pulse(sampleRate);
+            _pulse1 = new Pulse(sampleRate, true);
+            _pulse2 = new Pulse(sampleRate, false);
             _triangle = new Triangle(sampleRate);
             _noise = new Noise(sampleRate);
             _dmc = new DMC(sampleRate);

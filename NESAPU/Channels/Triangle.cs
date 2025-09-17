@@ -20,13 +20,14 @@ namespace NESAPU.Channels
         private int _linearCounter;
         private int _linearCounterReload;
         private bool _linearCounterReloadFlag;
+        private float _lastSample;      // For simple low-pass filtering
 
         // Triangle wave sequence (32 steps)
         // Produces values 0, 1, 2, ..., 15, 15, 14, 13, ..., 1, 0
         private static readonly byte[] TriangleSequence =
         [
-            15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4,  3,  2,  1,  0,
-             0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
+            15, 14, 13, 12, 11, 10, 9,  8,  7,  6,  5,  4,  3,  2,  1,  0,
+            0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
         ];
 
         public WaveFormat WaveFormat { get; }
@@ -127,6 +128,7 @@ namespace NESAPU.Channels
             _timer = 0;
             _timerPeriod = 0;
             _sequenceCounter = 0;
+            _lastSample = 0f;
 
             // Reset registers
             _linearControl = 0;
@@ -173,7 +175,7 @@ namespace NESAPU.Channels
             for (int i = 0; i < count; i++)
             {
                 // Convert sample rate to APU frequency
-                float apuCyclesPerSample = 1789773f / (2f * _sampleRate); // APU = CPU/2
+                float apuCyclesPerSample = 1789773f / (32f * _sampleRate); // APU = CPU/2
 
                 // Timer clocking
                 _timer -= (int)apuCyclesPerSample;
@@ -183,7 +185,7 @@ namespace NESAPU.Channels
 
                     // Triangle channel clocks the sequencer if both counters are non-zero
                     // AND timer period is not too low (ultrasonic frequencies are silenced)
-                    if (_lengthCounter > 0 && _linearCounter > 0 && _timerPeriod >= 2)
+                    if (_lengthCounter > 0 && _linearCounter > 0)
                     {
                         _sequenceCounter = (_sequenceCounter + 1) % 32;
                     }
@@ -194,7 +196,7 @@ namespace NESAPU.Channels
 
                 // Output triangle wave if both length and linear counters are active
                 // and timer period is in valid range
-                if (_lengthCounter > 0 && _linearCounter > 0 && _timerPeriod >= 2)
+                if (_timerPeriod >= 2)
                 {
                     // Get current step in triangle sequence
                     byte triangleStep = TriangleSequence[_sequenceCounter];
@@ -202,6 +204,11 @@ namespace NESAPU.Channels
                     // Convert to audio range (-1.0 to 1.0)
                     // Triangle channel doesn't have volume control, always full amplitude
                     sample = (triangleStep / 15.0f) * 0.5f - 0.25f; // Center around 0 and reduce volume
+                    _lastSample = sample;
+                }
+                else
+                {
+                    sample = _lastSample;
                 }
 
                 buffer[offset + i] = sample;

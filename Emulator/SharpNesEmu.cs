@@ -123,14 +123,9 @@ namespace Emulator
                         WriteLog();
                     }
                     CPU.Clock();
-                }
-                PPU.Clock();
-                
-                // Clock the APU at CPU frequency / 2 (approximately)
-                if (i % 6 == 0) // Every other CPU cycle
-                {
                     APU.Clock();
                 }
+                PPU.Clock();
             }
         }
 

@@ -6,6 +6,8 @@ namespace NESAPU.Channels
     {
         private readonly float _sampleRate;
 
+        private readonly bool _isPulse1;
+
         // Pulse channel registers
         private byte _dutyControl;      // $4000/$4004 - DDLC VVVV
         private byte _sweepControl;     // $4001/$4005 - EPPP NSSS  
@@ -35,10 +37,11 @@ namespace NESAPU.Channels
 
         public WaveFormat WaveFormat { get; }
 
-        public Pulse(float sampleRate = 44100f)
+        public Pulse(float sampleRate = 44100f, bool isPulse1 = true)
         {
             _sampleRate = sampleRate;
             WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat((int)sampleRate, 1);
+            _isPulse1 = isPulse1;
 
             // Initialize registers and state
             _lengthCounter = 0;
@@ -139,15 +142,16 @@ namespace NESAPU.Channels
         private void CalculateTargetPeriod()
         {
             int shiftAmount = _sweepControl & 0x07;
-            _targetPeriod = _timerPeriod >> shiftAmount;
+            int changeAmount = _timerPeriod >> shiftAmount;
 
             if ((_sweepControl & 0x08) != 0) // Negate flag
             {
-                _targetPeriod = _timerPeriod - _targetPeriod;
+                // Pulse 1 uses one's complement, Pulse 2 uses two's complement
+                _targetPeriod = _timerPeriod - changeAmount - (_isPulse1 ? 1 : 0);
             }
             else
             {
-                _targetPeriod = _timerPeriod + _targetPeriod;
+                _targetPeriod = _timerPeriod + changeAmount;
             }
         }
 
@@ -202,21 +206,26 @@ namespace NESAPU.Channels
         // Sweep clock (call at 120Hz)
         public void ClockSweep()
         {
-            if (_sweepCounter == 0 && (_sweepControl & 0x80) != 0) // Sweep enabled
-            {
-                if (_timerPeriod >= 8 && _targetPeriod <= 0x7FF)
-                {
-                    _timerPeriod = _targetPeriod;
-                    UpdateTimerPeriod();
-                }
-            }
-
+            // Update target period calculation always
+            CalculateTargetPeriod();
+            
+            // Clock the sweep divider
             if (_sweepCounter == 0 || _sweepReload)
             {
                 _sweepCounter = (_sweepControl >> 4) & 0x07;
                 _sweepReload = false;
+                
+                // Apply sweep if enabled and conditions are met
+                if ((_sweepControl & 0x80) != 0 && (_sweepControl & 0x07) != 0) // Enabled and shift > 0
+                {
+                    if (_timerPeriod >= 8 && _targetPeriod <= 0x7FF)
+                    {
+                        _timerPeriod = _targetPeriod;
+                        UpdateTimerPeriod();
+                    }
+                }
             }
-            else
+            else if (_sweepCounter > 0)
             {
                 _sweepCounter--;
             }
@@ -241,7 +250,8 @@ namespace NESAPU.Channels
                 float sample = 0f;
 
                 // Generate sound only if the channel is active
-                if (_lengthCounter > 0 && _timerPeriod >= 8 && _timerPeriod <= 0x7FF)
+                if (_lengthCounter > 0 && _timerPeriod >= 8 && _timerPeriod <= 0x7FF && 
+                    (_targetPeriod <= 0x7FF || (_sweepControl & 0x80) == 0))
                 {
                     // Get duty cycle pattern
                     int dutySelect = (_dutyControl >> 6) & 0x03;
