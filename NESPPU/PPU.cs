@@ -16,9 +16,21 @@ namespace NESPPU
         private readonly byte[] _memory = new byte[0x4000];
         public byte[] Memory { get { return _memory; } }
         public byte[] OAM = new byte[0x100];
-        
+
+        private readonly ushort[] _mirrorLookup = new ushort[0x4000];
+
         // Mirroring configuration - set by cartridge loader
-        public MirroringType Mirroring { get; set; }
+        private MirroringType _mirroring;
+        public MirroringType Mirroring
+        {
+            get => _mirroring;
+            set
+            {
+                _mirroring = value;
+                // Regenerate the lookup table when mirroring changes
+                BuildMirrorLookupTable();
+            }
+        }
 
         public event EventHandler? TriggerNMI;
         public event EventHandler<int[]>? FrameCompleted;
@@ -35,21 +47,22 @@ namespace NESPPU
             Dot = 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte ReadMemory(ushort address)
         {
-            ushort mirrorAddress = MirrorAddress(address);
-            return _memory[mirrorAddress];
+            return _memory[_mirrorLookup[address & 0x3FFF]];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteMemory(ushort address, byte value)
         {
-            address = MirrorAddress(address);
-            if (address < 0x2000)
+            ushort mirrorAddress = _mirrorLookup[address & 0x3FFF];
+            if (mirrorAddress < 0x2000)
             {
                 // CHR ROM/RAM area - typically read-only, check for access here
-                Console.WriteLine($"Warning: Attempt to write to CHR ROM/RAM at {address:X4}");
+                Console.WriteLine($"Warning: Attempt to write to CHR ROM/RAM at {mirrorAddress:X4}");
             }
-            _memory[address] = value;
+            _memory[mirrorAddress] = value;
         }
 
         public bool IsRenderingActive()
@@ -63,47 +76,46 @@ namespace NESPPU
             return (visibleScanlines || preRenderScanline) && renderingEnabled;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ushort MirrorAddress(ushort address)
+        private void BuildMirrorLookupTable()
         {
-            if (address >= 0x4000)
+            for (int address = 0; address < 0x4000; address++)
             {
-                address = (ushort)(address & 0x3FFF);
-            }
+                ushort addr = (ushort)address;
 
-            // Handle PPU memory mirroring
-            if (address >= 0x3000 && address <= 0x3EFF)
-            {
-                // $3000-$3EFF mirrors $2000-$2EFF
-                address = (ushort)(address - 0x1000);
-            }
-            else if (address >= 0x3F20 && address <= 0x3FFF)
-            {
-                // $3F20-$3FFF mirrors $3F00-$3F1F (palette RAM)
-                address = (ushort)(0x3F00 + ((address - 0x3F00) % 0x20));
-            }
+                // Handle PPU memory mirroring
+                if (addr >= 0x3000 && addr <= 0x3EFF)
+                {
+                    // $3000-$3EFF mirrors $2000-$2EFF
+                    addr = (ushort)(addr - 0x1000);
+                }
+                else if (addr >= 0x3F20 && addr <= 0x3FFF)
+                {
+                    // $3F20-$3FFF mirrors $3F00-$3F1F (palette RAM)
+                    addr = (ushort)(0x3F00 + ((addr - 0x3F00) % 0x20));
+                }
 
-            // Handle palette mirroring at $3F10, $3F14, $3F18, $3F1C
-            if (address == 0x3F10) address = 0x3F00;
-            else if (address == 0x3F14) address = 0x3F04;
-            else if (address == 0x3F18) address = 0x3F08;
-            else if (address == 0x3F1C) address = 0x3F0C;
+                // Handle palette mirroring at $3F10, $3F14, $3F18, $3F1C
+                if (addr == 0x3F10) addr = 0x3F00;
+                else if (addr == 0x3F14) addr = 0x3F04;
+                else if (addr == 0x3F18) addr = 0x3F08;
+                else if (addr == 0x3F1C) addr = 0x3F0C;
 
-            // Handle nametable mirroring ($2000-$2FFF)
-            if (address >= 0x2000 && address <= 0x2FFF)
-            {
-                address = MirrorNametable(address);
+                // Handle nametable mirroring ($2000-$2FFF)
+                if (addr >= 0x2000 && addr <= 0x2FFF)
+                {
+                    addr = MirrorNametableForLookup(addr);
+                }
+
+                _mirrorLookup[address] = addr;
             }
-
-            return address;
         }
 
-        private ushort MirrorNametable(ushort address)
+        private ushort MirrorNametableForLookup(ushort address)
         {
             var nametableIndex = (address - 0x2000) / 0x400; // Which nametable (0-3)
             var offset = (address - 0x2000) % 0x400;         // Offset within nametable
 
-            switch (Mirroring)
+            switch (_mirroring)
             {
                 case MirroringType.Horizontal:
                     // NT0&1 share memory, NT2&3 share memory

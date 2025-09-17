@@ -7,32 +7,30 @@ namespace Ricoh6502
     public class CPU
     {
         private readonly NesController _nesController;
-
         private readonly CommandFactory _commandFactory;
 
         private bool _interrupt;
-
         private bool _nonMaskableInterrupt;
-
         private bool _executeDMA;
-
         private uint _dmaCycle;
-
         private uint _lastDmaCycle;
-
         private uint _nextInstructionCycle;
 
         public uint Cycles { get; private set; }
 
         public event EventHandler<MemoryAccessEventArgs>? PPURegisterWrite;
-
         public event EventHandler<MemoryAccessEventArgs>? PPURegisterRead;
-
         public event EventHandler<MemoryAccessEventArgs>? DMAWrite;
-
         public event EventHandler<MemoryAccessEventArgs>? APURegisterWrite;
-
         public event EventHandler<MemoryAccessEventArgs>? APURegisterRead;
+
+        private delegate byte ReadHandler(ushort address);
+        private delegate void WriteHandler(ushort address, byte value);
+
+        private readonly ReadHandler[] _readHandlers = new ReadHandler[8];   // 8 páginas de 8KB
+        private readonly WriteHandler[] _writeHandlers = new WriteHandler[8];
+
+        private readonly ushort[] _absoluteAddressCache = new ushort[0x10000]; // d1,d2 -> address
 
         public CPU(NesController nesController)
         {
@@ -43,6 +41,9 @@ namespace Ricoh6502
             _executeDMA = false;
             _dmaCycle = 0;
             _lastDmaCycle = 0;
+
+            InitializeMemoryHandlers();
+            BuildAbsoluteAddressCache();
         }
 
         /// <summary>
@@ -187,6 +188,7 @@ namespace Ricoh6502
             };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte GetValue(AddressingMode addressingMode, byte d1, byte d2)
         {
             if (addressingMode == AddressingMode.Immediate)
@@ -200,43 +202,12 @@ namespace Ricoh6502
 
             var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
 
-            if (memoryAddress < 0x2000)
-            {
-                // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
-                if (memoryAddress >= 0x0800 && memoryAddress < 0x2000)
-                {
-                    memoryAddress = (ushort)(memoryAddress & 0x07FF);
-                }
-                return Memory[memoryAddress];
-            }
-
-            // Handle PPU register reads
-            if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
-            {
-                var ppuRegister = memoryAddress % 8;
-                var args = new MemoryAccessEventArgs((uint)ppuRegister, 0);
-                PPURegisterRead?.Invoke(this, args);
-                return args.Value; // Return the value set by the PPU
-            }
-            // Handle controller reads
-            else if (memoryAddress == 0x4016 || memoryAddress == 0x4017)
-            {
-                var buttonState = _nesController.ReadButtonState();
-                Memory[memoryAddress] = buttonState;
-                return buttonState;
-            }
-            // Handle APU register reads
-            else if (memoryAddress == 0x4015 || memoryAddress == 0x4017)
-            {
-                var apuRegister = (uint)(memoryAddress - 0x4000);
-                var args = new MemoryAccessEventArgs(apuRegister, 0);
-                APURegisterRead?.Invoke(this, args);
-                return args.Value; // Return the value set by the APU
-            }
-
-            return Memory[memoryAddress];
+            // Dispatch directo por rango - no más condicionales!
+            int handlerIndex = memoryAddress >> 13; // Divide por 8192 para obtener el handler correcto
+            return _readHandlers[handlerIndex](memoryAddress);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetValue(AddressingMode addressingMode, byte d1, byte d2, byte value)
         {
             if (addressingMode == AddressingMode.Accumulator)
@@ -247,41 +218,9 @@ namespace Ricoh6502
 
             var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
 
-            // Handle PPU register writes
-            if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
-            {
-                var offset = (uint)(memoryAddress % 8);
-                PPURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(offset, value));
-                for (ushort addr = 0x2000; addr < 0x4000; addr += 8)
-                {
-                    Memory[addr + offset] = value;
-                }
-            }
-            // Handle DMA writes
-            else if (memoryAddress == 0x4014)
-            {
-                PPURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(0x14, value));
-                _executeDMA = true;
-            }
-            // Handle NES controller strobe writes
-            else if (memoryAddress == 0x4016)
-            {
-                _nesController.WriteStrobe((byte)(value & 0x07));
-            }
-            // Handle APU register writes
-            else if (memoryAddress >= 0x4000 && memoryAddress <= 0x4013 || memoryAddress == 0x4015 || memoryAddress == 0x4017)
-            {
-                var apuRegister = (uint)(memoryAddress - 0x4000);
-                APURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(apuRegister, value));
-            }
-
-            // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
-            if (memoryAddress >= 0x0800 && memoryAddress < 0x2000)
-            {
-                memoryAddress = (ushort)(memoryAddress & 0x07FF);
-            }
-
-            Memory[memoryAddress] = value;
+            // Dispatch directo por rango - no más condicionales!
+            int handlerIndex = memoryAddress >> 13; // Divide por 8192 para obtener el handler correcto
+            _writeHandlers[handlerIndex](memoryAddress, value);
         }
 
         public void SetPCWithInterruptVector(ushort irqAddress)
@@ -311,6 +250,139 @@ namespace Ricoh6502
             _executeDMA = false;
             _dmaCycle = 0;
             _lastDmaCycle = 0;
+        }
+
+        private void InitializeMemoryHandlers()
+        {
+            // $0000-$1FFF: RAM (with mirroring)
+            _readHandlers[0] = ReadRAM;      // $0000-$1FFF
+            _writeHandlers[0] = WriteRAM;
+
+            // $2000-$3FFF: PPU Registers
+            _readHandlers[1] = ReadPPU;      // $2000-$3FFF  
+            _writeHandlers[1] = WritePPU;
+
+            // $4000-$5FFF: APU + I/O
+            _readHandlers[2] = ReadIO;       // $4000-$5FFF
+            _writeHandlers[2] = WriteIO;
+
+            // $6000-$7FFF: Battery backed Save RAM
+            _readHandlers[3] = ReadSaveRAM;  // $6000-$7FFF
+            _writeHandlers[3] = WriteSaveRAM;
+
+            // $8000-$FFFF: PRG ROM (32KB)
+            for (int i = 4; i < 8; i++)
+            {
+                _readHandlers[i] = ReadROM;   // $8000-$FFFF
+                _writeHandlers[i] = WriteROM;
+            }
+        }
+
+        private void BuildAbsoluteAddressCache()
+        {
+            for (int d1 = 0; d1 <= 0xFF; d1++)
+            {
+                for (int d2 = 0; d2 <= 0xFF; d2++)
+                {
+                    _absoluteAddressCache[(d2 << 8) | d1] = (ushort)(d1 | (d2 << 8));
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte ReadRAM(ushort address)
+        {
+            // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
+            return Memory[address & 0x07FF];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteRAM(ushort address, byte value)
+        {
+            Memory[address & 0x07FF] = value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte ReadPPU(ushort address)
+        {
+            var ppuRegister = address % 8;
+            var args = new MemoryAccessEventArgs((uint)ppuRegister, 0);
+            PPURegisterRead?.Invoke(this, args);
+            return args.Value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WritePPU(ushort address, byte value)
+        {
+            if (address == 0x4014)
+            {
+                PPURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(0x14, value));
+                _executeDMA = true;
+            }
+            else
+            {
+                var offset = (uint)(address % 8);
+                PPURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(offset, value));
+                // Actualizar todas las mirrors de una vez
+                for (ushort addr = 0x2000; addr < 0x4000; addr += 8)
+                {
+                    Memory[addr + offset] = value;
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte ReadIO(ushort address)
+        {
+            if (address == 0x4016 || address == 0x4017)
+            {
+                var buttonState = _nesController.ReadButtonState();
+                Memory[address] = buttonState;
+                return buttonState;
+            }
+            else if (address == 0x4015 || address == 0x4017)
+            {
+                var apuRegister = (uint)(address - 0x4000);
+                var args = new MemoryAccessEventArgs(apuRegister, 0);
+                APURegisterRead?.Invoke(this, args);
+                return args.Value;
+            }
+            return Memory[address];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteIO(ushort address, byte value)
+        {
+            if (address == 0x4014)
+            {
+                WritePPU(address, value); // DMA es una función PPU
+            }
+            else if (address == 0x4016)
+            {
+                _nesController.WriteStrobe((byte)(value & 0x07));
+            }
+            else if (address <= 0x4013 || address == 0x4015 || address == 0x4017)
+            {
+                var apuRegister = (uint)(address - 0x4000);
+                APURegisterWrite?.Invoke(this, new MemoryAccessEventArgs(apuRegister, value));
+            }
+            Memory[address] = value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte ReadSaveRAM(ushort address) => Memory[address];
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteSaveRAM(ushort address, byte value) => Memory[address] = value;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte ReadROM(ushort address) => Memory[address];
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteROM(ushort address, byte value)
+        {
+            // ROM writes might trigger mapper functionality
+            Memory[address] = value;
         }
 
         private void PerformDMA()
