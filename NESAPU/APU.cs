@@ -11,6 +11,8 @@ namespace NESAPU
         private readonly Pulse _pulse1;
         private readonly Pulse _pulse2;
         private readonly Triangle _triangle;
+        private readonly Noise _noise;
+        private readonly DMC _dmc;
         
         // Frame counter for timing
         private int _frameCounter;
@@ -40,8 +42,19 @@ namespace NESAPU
             _pulse1 = new Pulse(sampleRate);
             _pulse2 = new Pulse(sampleRate);
             _triangle = new Triangle(sampleRate);
+            _noise = new Noise(sampleRate);
+            _dmc = new DMC(sampleRate);
 
             Reset();
+        }
+
+        /// <summary>
+        /// Sets the memory read delegate for the DMC channel.
+        /// This should be called by the system to provide memory access.
+        /// </summary>
+        public void SetDmcMemoryReader(DMC.MemoryReadDelegate memoryReader)
+        {
+            _dmc.MemoryRead = memoryReader;
         }
 
         public void Reset()
@@ -57,6 +70,8 @@ namespace NESAPU
             _pulse1.Reset();
             _pulse2.Reset();
             _triangle.Reset();
+            _noise.Reset();
+            _dmc.Reset();
         }
 
         public byte HandleRegisterRead(uint register)
@@ -96,7 +111,7 @@ namespace NESAPU
                     _pulse2.WriteRegister((int)(register & 3), value);
                     break;
                 
-                // Triangle ($4008-$400B) - Not implemented yet
+                // Triangle ($4008-$400B)
                 case 0x08:
                 case 0x09:
                 case 0x0A:
@@ -104,20 +119,20 @@ namespace NESAPU
                     _triangle.WriteRegister((int)(register & 3), value);
                     break;
                 
-                // Noise ($400C-$400F) - Not implemented yet
+                // Noise ($400C-$400F)
                 case 0x0C:
                 case 0x0D:
                 case 0x0E:
                 case 0x0F:
-                    // TODO: Implement noise channel
+                    _noise.WriteRegister((int)(register & 3), value);
                     break;
                 
-                // DMC ($4010-$4013) - Not implemented yet
+                // DMC ($4010-$4013)
                 case 0x10:
                 case 0x11:
                 case 0x12:
                 case 0x13:
-                    // TODO: Implement DMC channel
+                    _dmc.WriteRegister((int)(register & 3), value);
                     break;
                 
                 // Status register ($4015)
@@ -127,12 +142,31 @@ namespace NESAPU
                     if ((value & 0x01) == 0)
                     {
                         // Disable pulse 1 - set length counter to 0
-                        _pulse1.SetLengthCounter(0); // Disable pulse 1
+                        _pulse1.SetLengthCounter(0);
                     }
                     if ((value & 0x02) == 0)
                     {
                         // Disable pulse 2 - set length counter to 0
-                        _pulse2.SetLengthCounter(0); // Disable pulse 1
+                        _pulse2.SetLengthCounter(0);
+                    }
+                    if ((value & 0x04) == 0)
+                    {
+                        // Disable triangle - set length counter to 0
+                        _triangle.SetLengthCounter(0);
+                    }
+                    if ((value & 0x08) == 0)
+                    {
+                        _noise.SetLengthCounter(0); // Disable noise
+                    }
+                    if ((value & 0x10) != 0)
+                    {
+                        // Enable DMC - start sample playback
+                        _dmc.StartSample();
+                    }
+                    else
+                    {
+                        // Disable DMC - stop sample playback
+                        _dmc.StopSample();
                     }
                     break;
                 
@@ -225,6 +259,7 @@ namespace NESAPU
             _pulse1.ClockEnvelope();
             _pulse2.ClockEnvelope();
             _triangle.ClockLinearCounter();
+            _noise.ClockEnvelope();
         }
 
         private void ClockLengthCountersAndSweep()
@@ -236,6 +271,8 @@ namespace NESAPU
             _pulse2.ClockSweep();
 
             _triangle.ClockLength();
+
+            _noise.ClockLength();
         }
 
         // ISampleProvider implementation for audio mixing
@@ -245,11 +282,15 @@ namespace NESAPU
             float[] pulse1Buffer = new float[count];
             float[] pulse2Buffer = new float[count];
             float[] triangleBuffer = new float[count];
+            float[] noiseBuffer = new float[count];
+            float[] dmcBuffer = new float[count];
 
             // Get samples from each channel
             _pulse1.Read(pulse1Buffer, 0, count);
             _pulse2.Read(pulse2Buffer, 0, count);
             _triangle.Read(triangleBuffer, 0, count);
+            _noise.Read(noiseBuffer, 0, count);
+            _dmc.Read(dmcBuffer, 0, count);
 
             // Mix the channels using NES APU mixing algorithm
             for (int i = 0; i < count; i++)
@@ -258,22 +299,15 @@ namespace NESAPU
                 float pulse1Sample = pulse1Buffer[i];
                 float pulse2Sample = pulse2Buffer[i];
                 float triangleSample = triangleBuffer[i];
+                float noiseSample = noiseBuffer[i];
+                float dmcSample = dmcBuffer[i];
 
-                // Mix pulse channels (simplified linear mixing for now)
-                // The actual NES uses: pulse_out = 95.88 / (8128 / (pulse1 + pulse2) + 100)
-                float pulseSum = pulse1Sample + pulse2Sample + triangleSample;
-                float pulseOut = 0f;
-                
-                if (pulseSum > 0)
-                {
-                    // Simplified approximation of NES mixing
-                    pulseOut = pulseSum * 0.33f; // Average and reduce volume
-                }
-                
-                // TODO: Add noise, and DMC channels to the mix
+                // Mix all channels (simplified linear mixing)
+                float totalSum = pulse1Sample + pulse2Sample + triangleSample + noiseSample + dmcSample;
+                float mixedOutput = totalSum * 0.2f; // Average and reduce volume
                 
                 // Apply master volume and clamp
-                buffer[offset + i] = Math.Clamp(pulseOut, -1.0f, 1.0f);
+                buffer[offset + i] = Math.Clamp(mixedOutput, -1.0f, 1.0f);
             }
             
             return count;
@@ -287,17 +321,20 @@ namespace NESAPU
             if (_pulse1.IsActive()) status |= 0x01; // Pulse 1 length counter > 0
             if (_pulse2.IsActive()) status |= 0x02; // Pulse 2 length counter > 0
             if (_triangle.IsActive()) status |= 0x04; // Triangle length counter > 0
+            if (_noise.IsActive()) status |= 0x08; // Noise length counter > 0
+            if (_dmc.IsActive()) status |= 0x10; // DMC active
 
             // Frame interrupt flag (bit 6)
             if (_frameInterruptFlag) status |= 0x40;
 
+            // DMC interrupt flag (bit 7)
+            if (_dmc.GetInterruptFlag()) status |= 0x80;
+
             // Clear frame interrupt flag when reading status
             _frameInterruptFlag = false;
-
-            // TODO: Add noise, and DMC status bits
-            // Bit 3: Noise length counter > 0
-            // Bit 4: DMC active
-            // Bit 7: DMC interrupt
+            
+            // Clear DMC interrupt flag when reading status
+            _dmc.ClearInterruptFlag();
 
             return status;
         }
