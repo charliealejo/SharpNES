@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SharpNES"
         mc:Ignorable="d"
-        Title="SharpNES" Height="700" Width="1100"
+        Title="SharpNES" Height="700" Width="800"
         Focusable="True"
         KeyDown="MainWindow_KeyDown"
         KeyUp="MainWindow_KeyUp">
@@ -34,7 +34,7 @@
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="400"/>
+                <!--ColumnDefinition Width="400"/-->
             </Grid.ColumnDefinitions>
 
             <!-- NES Display Area -->
@@ -45,7 +45,7 @@
                    VerticalAlignment="Center"/>
 
             <!-- Right Panel with Debug Information -->
-            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <!-- <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -58,7 +58,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Debug Controls Section -->
+                    <!- - Debug Controls Section - - >
                     <GroupBox Grid.Row="0" Header="Debug Controls" Margin="0,0,0,10">
                         <StackPanel Orientation="Horizontal" Margin="5" HorizontalAlignment="Center">
                             <Button x:Name="PauseButton" Content="Pause" Width="60" Height="30" Margin="5,0" Click="PauseButton_Click"/>
@@ -67,7 +67,7 @@
                         </StackPanel>
                     </GroupBox>
 
-                    <!-- Controls Section -->
+                    <!- - Controls Section - ->
                     <GroupBox Grid.Row="1" Header="Controls" Margin="0,0,0,10">
                         <StackPanel Margin="5">
                             <TextBlock Text="WASD/Arrows: Move"/>
@@ -82,7 +82,7 @@
                         </StackPanel>
                     </GroupBox>
 
-                    <!-- PPU Timing Section -->
+                    <!- - PPU Timing Section - ->
                     <GroupBox Grid.Row="2" Header="PPU Timing" Margin="0,0,0,10">
                         <StackPanel Margin="5">
                             <StackPanel Orientation="Horizontal">
@@ -96,7 +96,7 @@
                         </StackPanel>
                     </GroupBox>
 
-                    <!-- PPU Registers Section -->
+                    <!- - PPU Registers Section - ->
                     <GroupBox Grid.Row="3" Header="PPU Registers" Margin="0,0,0,10">
                         <StackPanel Margin="5">
                             <StackPanel Orientation="Horizontal">
@@ -126,7 +126,7 @@
                         </StackPanel>
                     </GroupBox>
 
-                    <!-- Current Tile Information -->
+                    <!- - Current Tile Information - ->
                     <GroupBox Grid.Row="4" Header="Current Tile Info" Margin="0,0,0,10">
                         <StackPanel Margin="5">
                             <StackPanel Orientation="Horizontal">
@@ -139,118 +139,32 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Nametable: " Width="90"/>
-                                <TextBlock x:Name="CurrentNametableText" Text="$----" FontFamily="Consolas"/>
+                                <TextBlock x:Name="CurrentNametableText" Text="$- - - -" FontFamily="Consolas"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Tile Index: " Width="90"/>
-                                <TextBlock x:Name="TileIndexText" Text="$--" FontFamily="Consolas"/>
+                                <TextBlock x:Name="TileIndexText" Text="$- -" FontFamily="Consolas"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Tile Addr: " Width="90"/>
-                                <TextBlock x:Name="TileAddressText" Text="$----" FontFamily="Consolas"/>
+                                <TextBlock x:Name="TileAddressText" Text="$- - - -" FontFamily="Consolas"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Attr Data: " Width="90"/>
-                                <TextBlock x:Name="AttributeDataText" Text="$--" FontFamily="Consolas"/>
+                                <TextBlock x:Name="AttributeDataText" Text="$- -" FontFamily="Consolas"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Attr Addr: " Width="90"/>
-                                <TextBlock x:Name="AttributeAddrText" Text="$----" FontFamily="Consolas"/>
+                                <TextBlock x:Name="AttributeAddrText" Text="$- - - -" FontFamily="Consolas"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="Palette Addr: " Width="90"/>
-                                <TextBlock x:Name="PaletteAddrText" Text="$----" FontFamily="Consolas"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </GroupBox>
-
-                    <!-- PPU Status Flags -->
-                    <GroupBox Grid.Row="5" Header="Status Flags" Margin="0,0,0,10">
-                        <StackPanel Margin="5">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="VBlank: " Width="80"/>
-                                <TextBlock x:Name="VBlankText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Sprite0Hit: " Width="80"/>
-                                <TextBlock x:Name="Sprite0HitText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="SprOverflow: " Width="80"/>
-                                <TextBlock x:Name="SpriteOverflowText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="NMI Enable: " Width="80"/>
-                                <TextBlock x:Name="NMIEnabledText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </GroupBox>
-
-                    <!-- Rendering Settings -->
-                    <GroupBox Grid.Row="6" Header="Rendering" Margin="0,0,0,10">
-                        <StackPanel Margin="5">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Show BG: " Width="80"/>
-                                <TextBlock x:Name="ShowBackgroundText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Show Sprites: " Width="80"/>
-                                <TextBlock x:Name="ShowSpritesText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="BG Pattern: " Width="80"/>
-                                <TextBlock x:Name="BGPatternText" Text="$0000" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Spr Pattern: " Width="80"/>
-                                <TextBlock x:Name="SprPatternText" Text="$0000" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Sprite Size: " Width="80"/>
-                                <TextBlock x:Name="SpriteSizeText" Text="8x8" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Increment: " Width="80"/>
-                                <TextBlock x:Name="IncrementModeText" Text="1" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Mirroring: " Width="80"/>
-                                <TextBlock x:Name="MirroringText" Text="Horizontal" FontFamily="Consolas"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </GroupBox>
-
-                    <!-- Color Effects -->
-                    <GroupBox Grid.Row="7" Header="Color Effects" Margin="0,0,0,10">
-                        <StackPanel Margin="5">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Grayscale: " Width="80"/>
-                                <TextBlock x:Name="GrayscaleText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Emph Red: " Width="80"/>
-                                <TextBlock x:Name="EmphasizeRedText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Emph Green: " Width="80"/>
-                                <TextBlock x:Name="EmphasizeGreenText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Emph Blue: " Width="80"/>
-                                <TextBlock x:Name="EmphasizeBlueText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Show BG Left: " Width="80"/>
-                                <TextBlock x:Name="ShowBGLeftText" Text="False" FontFamily="Consolas"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Show Spr Left: " Width="80"/>
-                                <TextBlock x:Name="ShowSprLeftText" Text="False" FontFamily="Consolas"/>
+                                <TextBlock x:Name="PaletteAddrText" Text="$- - - -" FontFamily="Consolas"/>
                             </StackPanel>
                         </StackPanel>
                     </GroupBox>
                 </Grid>
-            </ScrollViewer>
+            </ScrollViewer> -->
         </Grid>
     </Grid>
 </Window>

@@ -1,4 +1,5 @@
 ﻿using Cartridge;
+using System.Runtime.CompilerServices;
 
 namespace NESPPU
 {
@@ -62,6 +63,7 @@ namespace NESPPU
             return (visibleScanlines || preRenderScanline) && renderingEnabled;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ushort MirrorAddress(ushort address)
         {
             if (address >= 0x4000)

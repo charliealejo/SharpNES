@@ -1,11 +1,14 @@
 ﻿using InputDevices;
 using Ricoh6502.Commands;
+using System.Runtime.CompilerServices;
 
 namespace Ricoh6502
 {
     public class CPU
     {
         private readonly NesController _nesController;
+
+        private readonly CommandFactory _commandFactory;
 
         private bool _interrupt;
 
@@ -34,6 +37,7 @@ namespace Ricoh6502
         public CPU(NesController nesController)
         {
             _nesController = nesController ?? throw new ArgumentNullException(nameof(nesController));
+            _commandFactory = new CommandFactory();
             _interrupt = false;
             _nonMaskableInterrupt = false;
             _executeDMA = false;
@@ -112,7 +116,7 @@ namespace Ricoh6502
             }
             else
             {
-                command = CommandFactory.CreateCommand(opcode, d1, d2);
+                command = _commandFactory.CreateCommand(opcode, d1, d2);
             }
 
             // Execute the instruction
@@ -131,21 +135,25 @@ namespace Ricoh6502
             Cycles++;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsCycleExecutingCommand()
         {
             return Cycles == _nextInstructionCycle;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void IRQ()
         {
             _interrupt = true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void NMI()
         {
             _nonMaskableInterrupt = true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ushort GetBaseAddress(AddressingMode addressingMode, byte d1, byte d2)
         {
             return addressingMode switch
@@ -157,6 +165,7 @@ namespace Ricoh6502
             };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ushort GetEffectiveAddress(AddressingMode addressingMode, byte d1, byte d2)
         {
             return addressingMode switch
@@ -191,6 +200,16 @@ namespace Ricoh6502
 
             var memoryAddress = GetEffectiveAddress(addressingMode, d1, d2);
 
+            if (memoryAddress < 0x2000)
+            {
+                // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
+                if (memoryAddress >= 0x0800 && memoryAddress < 0x2000)
+                {
+                    memoryAddress = (ushort)(memoryAddress & 0x07FF);
+                }
+                return Memory[memoryAddress];
+            }
+
             // Handle PPU register reads
             if (memoryAddress >= 0x2000 && memoryAddress < 0x4000)
             {
@@ -213,12 +232,6 @@ namespace Ricoh6502
                 var args = new MemoryAccessEventArgs(apuRegister, 0);
                 APURegisterRead?.Invoke(this, args);
                 return args.Value; // Return the value set by the APU
-            }
-
-            // Mirror RAM addresses $0000-$07FF to $0800-$1FFF
-            if (memoryAddress >= 0x0800 && memoryAddress < 0x2000)
-            {
-                memoryAddress = (ushort)(memoryAddress & 0x07FF);
             }
 
             return Memory[memoryAddress];

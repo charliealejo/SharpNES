@@ -10,6 +10,7 @@ namespace NESAPU
         // APU Channels
         private readonly Pulse _pulse1;
         private readonly Pulse _pulse2;
+        private readonly Triangle _triangle;
         
         // Frame counter for timing
         private int _frameCounter;
@@ -38,7 +39,8 @@ namespace NESAPU
             
             _pulse1 = new Pulse(sampleRate);
             _pulse2 = new Pulse(sampleRate);
-            
+            _triangle = new Triangle(sampleRate);
+
             Reset();
         }
 
@@ -54,6 +56,7 @@ namespace NESAPU
 
             _pulse1.Reset();
             _pulse2.Reset();
+            _triangle.Reset();
         }
 
         public byte HandleRegisterRead(uint register)
@@ -98,7 +101,7 @@ namespace NESAPU
                 case 0x09:
                 case 0x0A:
                 case 0x0B:
-                    // TODO: Implement triangle channel
+                    _triangle.WriteRegister((int)(register & 3), value);
                     break;
                 
                 // Noise ($400C-$400F) - Not implemented yet
@@ -158,8 +161,8 @@ namespace NESAPU
         {
             _frameCounterCycles++;
 
-            // Frame counter runs at ~240Hz, which is every ~7457 APU cycles
-            if (_frameCounterCycles >= 7457)
+            // Frame counter runs at ~240Hz, which is every ~3728 APU cycles
+            if (_frameCounterCycles >= 3728)
             {
                 _frameCounterCycles = 0;
                 ClockFrameCounter();
@@ -221,7 +224,7 @@ namespace NESAPU
         {
             _pulse1.ClockEnvelope();
             _pulse2.ClockEnvelope();
-            // TODO: Clock triangle linear counter and noise envelope
+            _triangle.ClockLinearCounter();
         }
 
         private void ClockLengthCountersAndSweep()
@@ -231,8 +234,8 @@ namespace NESAPU
             
             _pulse2.ClockLength();
             _pulse2.ClockSweep();
-            
-            // TODO: Clock triangle length counter and noise length counter
+
+            _triangle.ClockLength();
         }
 
         // ISampleProvider implementation for audio mixing
@@ -241,30 +244,33 @@ namespace NESAPU
             // Create temporary buffers for each channel
             float[] pulse1Buffer = new float[count];
             float[] pulse2Buffer = new float[count];
-            
+            float[] triangleBuffer = new float[count];
+
             // Get samples from each channel
             _pulse1.Read(pulse1Buffer, 0, count);
             _pulse2.Read(pulse2Buffer, 0, count);
-            
+            _triangle.Read(triangleBuffer, 0, count);
+
             // Mix the channels using NES APU mixing algorithm
             for (int i = 0; i < count; i++)
             {
                 // NES APU uses a non-linear mixing algorithm
                 float pulse1Sample = pulse1Buffer[i];
                 float pulse2Sample = pulse2Buffer[i];
-                
+                float triangleSample = triangleBuffer[i];
+
                 // Mix pulse channels (simplified linear mixing for now)
                 // The actual NES uses: pulse_out = 95.88 / (8128 / (pulse1 + pulse2) + 100)
-                float pulseSum = pulse1Sample + pulse2Sample;
+                float pulseSum = pulse1Sample + pulse2Sample + triangleSample;
                 float pulseOut = 0f;
                 
                 if (pulseSum > 0)
                 {
                     // Simplified approximation of NES mixing
-                    pulseOut = pulseSum * 0.5f; // Average and reduce volume
+                    pulseOut = pulseSum * 0.33f; // Average and reduce volume
                 }
                 
-                // TODO: Add triangle, noise, and DMC channels to the mix
+                // TODO: Add noise, and DMC channels to the mix
                 
                 // Apply master volume and clamp
                 buffer[offset + i] = Math.Clamp(pulseOut, -1.0f, 1.0f);
@@ -280,6 +286,7 @@ namespace NESAPU
 
             if (_pulse1.IsActive()) status |= 0x01; // Pulse 1 length counter > 0
             if (_pulse2.IsActive()) status |= 0x02; // Pulse 2 length counter > 0
+            if (_triangle.IsActive()) status |= 0x04; // Triangle length counter > 0
 
             // Frame interrupt flag (bit 6)
             if (_frameInterruptFlag) status |= 0x40;
@@ -287,8 +294,7 @@ namespace NESAPU
             // Clear frame interrupt flag when reading status
             _frameInterruptFlag = false;
 
-            // TODO: Add triangle, noise, and DMC status bits
-            // Bit 2: Triangle length counter > 0
+            // TODO: Add noise, and DMC status bits
             // Bit 3: Noise length counter > 0
             // Bit 4: DMC active
             // Bit 7: DMC interrupt

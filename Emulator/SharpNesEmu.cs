@@ -17,6 +17,8 @@ namespace Emulator
         private readonly bool _debugMode;
         private readonly ushort _startAddress;
         private readonly NesLogger? _logger;
+        private readonly CommandFactory _commandFactory = new();
+        private readonly Stopwatch _frameTimer = new();
         private bool _isRunning;
         private CancellationToken _cancellationToken;
         
@@ -93,16 +95,16 @@ namespace Emulator
 
         public void Run()
         {
-            var clock = new Stopwatch();
             while (!_cancellationToken.IsCancellationRequested)
             {
-                clock.Restart();
+                _frameTimer.Restart();
                 if (_isRunning)
                 {
                     RenderFrame();
                 }
 
-                var sleepTime = MillisecondsPerFrame - clock.Elapsed.TotalMilliseconds;
+                _frameTimer.Stop();
+                var sleepTime = MillisecondsPerFrame - _frameTimer.Elapsed.TotalMilliseconds;
                 if (sleepTime > 0)
                 {
                     Thread.Sleep((int)sleepTime);
@@ -187,7 +189,7 @@ namespace Emulator
             byte opcode = CPU.Memory[CPU.PC];
             byte d1 = CPU.Memory[(ushort)(CPU.PC + 1)];
             byte d2 = CPU.Memory[(ushort)(CPU.PC + 2)];
-            var command = CommandFactory.CreateCommand(opcode, d1, d2);
+            var command = _commandFactory.CreateCommand(opcode, d1, d2);
 
             var addMode = command.AddressingMode;
             string b1 = addMode == AddressingMode.Implied ? "  " : $"{d1:X2}";

@@ -227,7 +227,7 @@ namespace NESAPU.Channels
             for (int i = 0; i < count; i++)
             {
                 // Convert sample rate to APU frequency (approximately 1.789773 MHz)
-                float apuCyclesPerSample = 1789773f / _sampleRate;
+                float apuCyclesPerSample = 1789773f / (2f * _sampleRate);
 
                 // Timer clocking
                 _timer -= (int)apuCyclesPerSample;

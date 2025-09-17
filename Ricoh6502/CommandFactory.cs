@@ -5,200 +5,203 @@ namespace Ricoh6502
 {
     public class CommandFactory
     {
-        public static Command CreateCommand(byte opcode, byte d1, byte d2)
+        private readonly Func<byte, byte, Command>[] CommandLookup = new Func<byte, byte, Command>[256];
+
+        public CommandFactory()
         {
-            return opcode switch
-            {
-                // Official opcodes
-                0x69 => new ADC(AddressingMode.Immediate, d1, 0),
-                0x65 => new ADC(AddressingMode.ZeroPage, d1, 0),
-                0x75 => new ADC(AddressingMode.ZeroPageX, d1, 0),
-                0x6D => new ADC(AddressingMode.Absolute, d1, d2),
-                0x7D => new ADC(AddressingMode.AbsoluteX, d1, d2),
-                0x79 => new ADC(AddressingMode.AbsoluteY, d1, d2),
-                0x61 => new ADC(AddressingMode.IndirectX, d1, 0),
-                0x71 => new ADC(AddressingMode.IndirectY, d1, 0),
-                0x29 => new AND(AddressingMode.Immediate, d1, 0),
-                0x25 => new AND(AddressingMode.ZeroPage, d1, 0),
-                0x35 => new AND(AddressingMode.ZeroPageX, d1, 0),
-                0x2D => new AND(AddressingMode.Absolute, d1, d2),
-                0x3D => new AND(AddressingMode.AbsoluteX, d1, d2),
-                0x39 => new AND(AddressingMode.AbsoluteY, d1, d2),
-                0x21 => new AND(AddressingMode.IndirectX, d1, 0),
-                0x31 => new AND(AddressingMode.IndirectY, d1, 0),
-                0x0A => new ASL(AddressingMode.Accumulator, 0, 0),
-                0x06 => new ASL(AddressingMode.ZeroPage, d1, 0),
-                0x16 => new ASL(AddressingMode.ZeroPageX, d1, 0),
-                0x0E => new ASL(AddressingMode.Absolute, d1, d2),
-                0x1E => new ASL(AddressingMode.AbsoluteX, d1, d2),
-                0x90 => new BCC(d1),
-                0xB0 => new BCS(d1),
-                0xF0 => new BEQ(d1),
-                0x24 => new BIT(AddressingMode.ZeroPage, d1, 0),
-                0x2C => new BIT(AddressingMode.Absolute, d1, d2),
-                0x30 => new BMI(d1),
-                0xD0 => new BNE(d1),
-                0x10 => new BPL(d1),
-                0x00 => new BRK(),
-                0x50 => new BVC(d1),
-                0x70 => new BVS(d1),
-                0x18 => new CLC(),
-                0xD8 => new CLD(),
-                0x58 => new CLI(),
-                0xB8 => new CLV(),
-                0xC9 => new CMP(AddressingMode.Immediate, d1, 0),
-                0xC5 => new CMP(AddressingMode.ZeroPage, d1, 0),
-                0xD5 => new CMP(AddressingMode.ZeroPageX, d1, 0),
-                0xCD => new CMP(AddressingMode.Absolute, d1, d2),
-                0xDD => new CMP(AddressingMode.AbsoluteX, d1, d2),
-                0xD9 => new CMP(AddressingMode.AbsoluteY, d1, d2),
-                0xC1 => new CMP(AddressingMode.IndirectX, d1, 0),
-                0xD1 => new CMP(AddressingMode.IndirectY, d1, 0),
-                0xE0 => new CPX(AddressingMode.Immediate, d1, 0),
-                0xE4 => new CPX(AddressingMode.ZeroPage, d1, 0),
-                0xEC => new CPX(AddressingMode.Absolute, d1, d2),
-                0xC0 => new CPY(AddressingMode.Immediate, d1, 0),
-                0xC4 => new CPY(AddressingMode.ZeroPage, d1, 0),
-                0xCC => new CPY(AddressingMode.Absolute, d1, d2),
-                0xC6 => new DEC(AddressingMode.ZeroPage, d1, 0),
-                0xD6 => new DEC(AddressingMode.ZeroPageX, d1, 0),
-                0xCE => new DEC(AddressingMode.Absolute, d1, d2),
-                0xDE => new DEC(AddressingMode.AbsoluteX, d1, d2),
-                0xCA => new DEX(),
-                0x88 => new DEY(),
-                0x49 => new EOR(AddressingMode.Immediate, d1, 0),
-                0x45 => new EOR(AddressingMode.ZeroPage, d1, 0),
-                0x55 => new EOR(AddressingMode.ZeroPageX, d1, 0),
-                0x4D => new EOR(AddressingMode.Absolute, d1, d2),
-                0x5D => new EOR(AddressingMode.AbsoluteX, d1, d2),
-                0x59 => new EOR(AddressingMode.AbsoluteY, d1, d2),
-                0x41 => new EOR(AddressingMode.IndirectX, d1, 0),
-                0x51 => new EOR(AddressingMode.IndirectY, d1, 0),
-                0xE6 => new INC(AddressingMode.ZeroPage, d1, 0),
-                0xF6 => new INC(AddressingMode.ZeroPageX, d1, 0),
-                0xEE => new INC(AddressingMode.Absolute, d1, d2),
-                0xFE => new INC(AddressingMode.AbsoluteX, d1, d2),
-                0xE8 => new INX(),
-                0xC8 => new INY(),
-                0x4C => new JMP(AddressingMode.Absolute, d1, d2),
-                0x6C => new JMP(AddressingMode.Indirect, d1, d2),
-                0x20 => new JSR(d1, d2),
-                0xA9 => new LDA(AddressingMode.Immediate, d1, 0),
-                0xA5 => new LDA(AddressingMode.ZeroPage, d1, 0),
-                0xB5 => new LDA(AddressingMode.ZeroPageX, d1, 0),
-                0xAD => new LDA(AddressingMode.Absolute, d1, d2),
-                0xBD => new LDA(AddressingMode.AbsoluteX, d1, d2),
-                0xB9 => new LDA(AddressingMode.AbsoluteY, d1, d2),
-                0xA1 => new LDA(AddressingMode.IndirectX, d1, 0),
-                0xB1 => new LDA(AddressingMode.IndirectY, d1, 0),
-                0xA2 => new LDX(AddressingMode.Immediate, d1, 0),
-                0xA6 => new LDX(AddressingMode.ZeroPage, d1, 0),
-                0xB6 => new LDX(AddressingMode.ZeroPageY, d1, 0),
-                0xAE => new LDX(AddressingMode.Absolute, d1, d2),
-                0xBE => new LDX(AddressingMode.AbsoluteY, d1, d2),
-                0xA0 => new LDY(AddressingMode.Immediate, d1, 0),
-                0xA4 => new LDY(AddressingMode.ZeroPage, d1, 0),
-                0xB4 => new LDY(AddressingMode.ZeroPageX, d1, 0),
-                0xAC => new LDY(AddressingMode.Absolute, d1, d2),
-                0xBC => new LDY(AddressingMode.AbsoluteX, d1, d2),
-                0x4A => new LSR(AddressingMode.Accumulator, 0, 0),
-                0x46 => new LSR(AddressingMode.ZeroPage, d1, 0),
-                0x56 => new LSR(AddressingMode.ZeroPageX, d1, 0),
-                0x4E => new LSR(AddressingMode.Absolute, d1, d2),
-                0x5E => new LSR(AddressingMode.AbsoluteX, d1, d2),
-                0xEA => new NOP(),
-                0x09 => new ORA(AddressingMode.Immediate, d1, 0),
-                0x05 => new ORA(AddressingMode.ZeroPage, d1, 0),
-                0x15 => new ORA(AddressingMode.ZeroPageX, d1, 0),
-                0x0D => new ORA(AddressingMode.Absolute, d1, d2),
-                0x1D => new ORA(AddressingMode.AbsoluteX, d1, d2),
-                0x19 => new ORA(AddressingMode.AbsoluteY, d1, d2),
-                0x01 => new ORA(AddressingMode.IndirectX, d1, 0),
-                0x11 => new ORA(AddressingMode.IndirectY, d1, 0),
-                0x48 => new PHA(),
-                0x08 => new PHP(),
-                0x68 => new PLA(),
-                0x28 => new PLP(),
-                0x2A => new ROL(AddressingMode.Accumulator, 0, 0),
-                0x26 => new ROL(AddressingMode.ZeroPage, d1, 0),
-                0x36 => new ROL(AddressingMode.ZeroPageX, d1, 0),
-                0x2E => new ROL(AddressingMode.Absolute, d1, d2),
-                0x3E => new ROL(AddressingMode.AbsoluteX, d1, d2),
-                0x6A => new ROR(AddressingMode.Accumulator, 0, 0),
-                0x66 => new ROR(AddressingMode.ZeroPage, d1, 0),
-                0x76 => new ROR(AddressingMode.ZeroPageX, d1, 0),
-                0x6E => new ROR(AddressingMode.Absolute, d1, d2),
-                0x7E => new ROR(AddressingMode.AbsoluteX, d1, d2),
-                0x40 => new RTI(),
-                0x60 => new RTS(),
-                0xE9 => new SBC(AddressingMode.Immediate, d1, 0),
-                0xE5 => new SBC(AddressingMode.ZeroPage, d1, 0),
-                0xF5 => new SBC(AddressingMode.ZeroPageX, d1, 0),
-                0xED => new SBC(AddressingMode.Absolute, d1, d2),
-                0xFD => new SBC(AddressingMode.AbsoluteX, d1, d2),
-                0xF9 => new SBC(AddressingMode.AbsoluteY, d1, d2),
-                0xE1 => new SBC(AddressingMode.IndirectX, d1, 0),
-                0xF1 => new SBC(AddressingMode.IndirectY, d1, 0),
-                0x38 => new SEC(),
-                0xF8 => new SED(),
-                0x78 => new SEI(),
-                0x85 => new STA(AddressingMode.ZeroPage, d1, 0),
-                0x95 => new STA(AddressingMode.ZeroPageX, d1, 0),
-                0x8D => new STA(AddressingMode.Absolute, d1, d2),
-                0x9D => new STA(AddressingMode.AbsoluteX, d1, d2),
-                0x99 => new STA(AddressingMode.AbsoluteY, d1, d2),
-                0x81 => new STA(AddressingMode.IndirectX, d1, 0),
-                0x91 => new STA(AddressingMode.IndirectY, d1, 0),
-                0x86 => new STX(AddressingMode.ZeroPage, d1, 0),
-                0x96 => new STX(AddressingMode.ZeroPageY, d1, 0),
-                0x8E => new STX(AddressingMode.Absolute, d1, d2),
-                0x84 => new STY(AddressingMode.ZeroPage, d1, 0),
-                0x94 => new STY(AddressingMode.ZeroPageX, d1, 0),
-                0x8C => new STY(AddressingMode.Absolute, d1, d2),
-                0xAA => new TAX(),
-                0xA8 => new TAY(),
-                0xBA => new TSX(),
-                0x8A => new TXA(),
-                0x9A => new TXS(),
-                0x98 => new TYA(),
-                // Unofficial opcodes
-                0xA3 => new LAX(AddressingMode.IndirectX, d1, 0),
-                0xA7 => new LAX(AddressingMode.ZeroPage, d1, 0),
-                0xAF => new LAX(AddressingMode.Absolute, d1, d2),
-                0xB3 => new LAX(AddressingMode.IndirectY, d1, 0),
-                0xB7 => new LAX(AddressingMode.ZeroPageY, d1, 0),
-                0xBF => new LAX(AddressingMode.AbsoluteY, d1, d2),
-                0x04 => new NOP(AddressingMode.ZeroPage, d1),
-                0x44 => new NOP(AddressingMode.ZeroPage, d1),
-                0x64 => new NOP(AddressingMode.ZeroPage, d1),
-                0x0C => new NOP(AddressingMode.Absolute, d1, d2),
-                0x14 => new NOP(AddressingMode.ZeroPageX, d1),
-                0x34 => new NOP(AddressingMode.ZeroPageX, d1),
-                0x54 => new NOP(AddressingMode.ZeroPageX, d1),
-                0x74 => new NOP(AddressingMode.ZeroPageX, d1),
-                0xD4 => new NOP(AddressingMode.ZeroPageX, d1),
-                0xF4 => new NOP(AddressingMode.ZeroPageX, d1),
-                0x1A => new NOP(),
-                0x3A => new NOP(),
-                0x5A => new NOP(),
-                0x7A => new NOP(),
-                0xDA => new NOP(),
-                0xFA => new NOP(),
-                0x80 => new NOP(AddressingMode.Immediate, d1),
-                0x1C => new NOP(AddressingMode.AbsoluteX, d1, d2),
-                0x3C => new NOP(AddressingMode.AbsoluteX, d1, d2),
-                0x5C => new NOP(AddressingMode.AbsoluteX, d1, d2),
-                0x7C => new NOP(AddressingMode.AbsoluteX, d1, d2),
-                0xDC => new NOP(AddressingMode.AbsoluteX, d1, d2),
-                0xFC => new NOP(AddressingMode.AbsoluteX, d1, d2),
-                0x83 => new SAX(AddressingMode.IndirectX, d1, 0),
-                0x87 => new SAX(AddressingMode.ZeroPage, d1, 0),
-                0x8F => new SAX(AddressingMode.Absolute, d1, d2),
-                0x97 => new SAX(AddressingMode.ZeroPageY, d1, 0),
-                0xEB => new SBC(AddressingMode.Immediate, d1, 0),
-                // Default
-                _ => throw new NotImplementedException($"Opcode {opcode:X2} not implemented")
-            };
+            // Official opcodes
+            CommandLookup[0x69] = (d1, d2) => new ADC(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0x65] = (d1, d2) => new ADC(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x75] = (d1, d2) => new ADC(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x6D] = (d1, d2) => new ADC(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x7D] = (d1, d2) => new ADC(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x79] = (d1, d2) => new ADC(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0x61] = (d1, d2) => new ADC(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0x71] = (d1, d2) => new ADC(AddressingMode.IndirectY, d1, 0);
+            CommandLookup[0x29] = (d1, d2) => new AND(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0x25] = (d1, d2) => new AND(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x35] = (d1, d2) => new AND(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x2D] = (d1, d2) => new AND(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x3D] = (d1, d2) => new AND(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x39] = (d1, d2) => new AND(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0x21] = (d1, d2) => new AND(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0x31] = (d1, d2) => new AND(AddressingMode.IndirectY, d1, 0);
+            CommandLookup[0x0A] = (d1, d2) => new ASL(AddressingMode.Accumulator, 0, 0);
+            CommandLookup[0x06] = (d1, d2) => new ASL(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x16] = (d1, d2) => new ASL(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x0E] = (d1, d2) => new ASL(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x1E] = (d1, d2) => new ASL(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x90] = (d1, d2) => new BCC(d1);
+            CommandLookup[0xB0] = (d1, d2) => new BCS(d1);
+            CommandLookup[0xF0] = (d1, d2) => new BEQ(d1);
+            CommandLookup[0x24] = (d1, d2) => new BIT(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x2C] = (d1, d2) => new BIT(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x30] = (d1, d2) => new BMI(d1);
+            CommandLookup[0xD0] = (d1, d2) => new BNE(d1);
+            CommandLookup[0x10] = (d1, d2) => new BPL(d1);
+            CommandLookup[0x00] = (d1, d2) => new BRK();
+            CommandLookup[0x50] = (d1, d2) => new BVC(d1);
+            CommandLookup[0x70] = (d1, d2) => new BVS(d1);
+            CommandLookup[0x18] = (d1, d2) => new CLC();
+            CommandLookup[0xD8] = (d1, d2) => new CLD();
+            CommandLookup[0x58] = (d1, d2) => new CLI();
+            CommandLookup[0xB8] = (d1, d2) => new CLV();
+            CommandLookup[0xC9] = (d1, d2) => new CMP(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0xC5] = (d1, d2) => new CMP(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xD5] = (d1, d2) => new CMP(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0xCD] = (d1, d2) => new CMP(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xDD] = (d1, d2) => new CMP(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0xD9] = (d1, d2) => new CMP(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0xC1] = (d1, d2) => new CMP(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0xD1] = (d1, d2) => new CMP(AddressingMode.IndirectY, d1, 0);
+            CommandLookup[0xE0] = (d1, d2) => new CPX(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0xE4] = (d1, d2) => new CPX(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xEC] = (d1, d2) => new CPX(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xC0] = (d1, d2) => new CPY(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0xC4] = (d1, d2) => new CPY(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xCC] = (d1, d2) => new CPY(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xC6] = (d1, d2) => new DEC(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xD6] = (d1, d2) => new DEC(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0xCE] = (d1, d2) => new DEC(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xDE] = (d1, d2) => new DEC(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0xCA] = (d1, d2) => new DEX();
+            CommandLookup[0x88] = (d1, d2) => new DEY();
+            CommandLookup[0x49] = (d1, d2) => new EOR(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0x45] = (d1, d2) => new EOR(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x55] = (d1, d2) => new EOR(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x4D] = (d1, d2) => new EOR(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x5D] = (d1, d2) => new EOR(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x59] = (d1, d2) => new EOR(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0x41] = (d1, d2) => new EOR(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0x51] = (d1, d2) => new EOR(AddressingMode.IndirectY, d1, 0);
+            CommandLookup[0xE6] = (d1, d2) => new INC(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xF6] = (d1, d2) => new INC(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0xEE] = (d1, d2) => new INC(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xFE] = (d1, d2) => new INC(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0xE8] = (d1, d2) => new INX();
+            CommandLookup[0xC8] = (d1, d2) => new INY();
+            CommandLookup[0x4C] = (d1, d2) => new JMP(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x6C] = (d1, d2) => new JMP(AddressingMode.Indirect, d1, d2);
+            CommandLookup[0x20] = (d1, d2) => new JSR(d1, d2);
+            CommandLookup[0xA9] = (d1, d2) => new LDA(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0xA5] = (d1, d2) => new LDA(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xB5] = (d1, d2) => new LDA(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0xAD] = (d1, d2) => new LDA(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xBD] = (d1, d2) => new LDA(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0xB9] = (d1, d2) => new LDA(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0xA1] = (d1, d2) => new LDA(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0xB1] = (d1, d2) => new LDA(AddressingMode.IndirectY, d1, 0);
+            CommandLookup[0xA2] = (d1, d2) => new LDX(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0xA6] = (d1, d2) => new LDX(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xB6] = (d1, d2) => new LDX(AddressingMode.ZeroPageY, d1, 0);
+            CommandLookup[0xAE] = (d1, d2) => new LDX(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xBE] = (d1, d2) => new LDX(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0xA0] = (d1, d2) => new LDY(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0xA4] = (d1, d2) => new LDY(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xB4] = (d1, d2) => new LDY(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0xAC] = (d1, d2) => new LDY(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xBC] = (d1, d2) => new LDY(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x4A] = (d1, d2) => new LSR(AddressingMode.Accumulator, 0, 0);
+            CommandLookup[0x46] = (d1, d2) => new LSR(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x56] = (d1, d2) => new LSR(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x4E] = (d1, d2) => new LSR(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x5E] = (d1, d2) => new LSR(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0xEA] = (d1, d2) => new NOP();
+            CommandLookup[0x09] = (d1, d2) => new ORA(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0x05] = (d1, d2) => new ORA(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x15] = (d1, d2) => new ORA(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x0D] = (d1, d2) => new ORA(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x1D] = (d1, d2) => new ORA(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x19] = (d1, d2) => new ORA(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0x01] = (d1, d2) => new ORA(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0x11] = (d1, d2) => new ORA(AddressingMode.IndirectY, d1, 0);
+            CommandLookup[0x48] = (d1, d2) => new PHA();
+            CommandLookup[0x08] = (d1, d2) => new PHP();
+            CommandLookup[0x68] = (d1, d2) => new PLA();
+            CommandLookup[0x28] = (d1, d2) => new PLP();
+            CommandLookup[0x2A] = (d1, d2) => new ROL(AddressingMode.Accumulator, 0, 0);
+            CommandLookup[0x26] = (d1, d2) => new ROL(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x36] = (d1, d2) => new ROL(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x2E] = (d1, d2) => new ROL(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x3E] = (d1, d2) => new ROL(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x6A] = (d1, d2) => new ROR(AddressingMode.Accumulator, 0, 0);
+            CommandLookup[0x66] = (d1, d2) => new ROR(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x76] = (d1, d2) => new ROR(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x6E] = (d1, d2) => new ROR(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x7E] = (d1, d2) => new ROR(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x40] = (d1, d2) => new RTI();
+            CommandLookup[0x60] = (d1, d2) => new RTS();
+            CommandLookup[0xE9] = (d1, d2) => new SBC(AddressingMode.Immediate, d1, 0);
+            CommandLookup[0xE5] = (d1, d2) => new SBC(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xF5] = (d1, d2) => new SBC(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0xED] = (d1, d2) => new SBC(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xFD] = (d1, d2) => new SBC(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0xF9] = (d1, d2) => new SBC(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0xE1] = (d1, d2) => new SBC(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0xF1] = (d1, d2) => new SBC(AddressingMode.IndirectY, d1, 0);
+            CommandLookup[0x38] = (d1, d2) => new SEC();
+            CommandLookup[0xF8] = (d1, d2) => new SED();
+            CommandLookup[0x78] = (d1, d2) => new SEI();
+            CommandLookup[0x85] = (d1, d2) => new STA(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x95] = (d1, d2) => new STA(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x8D] = (d1, d2) => new STA(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x9D] = (d1, d2) => new STA(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x99] = (d1, d2) => new STA(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0x81] = (d1, d2) => new STA(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0x91] = (d1, d2) => new STA(AddressingMode.IndirectY, d1, 0);
+            CommandLookup[0x86] = (d1, d2) => new STX(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x96] = (d1, d2) => new STX(AddressingMode.ZeroPageY, d1, 0);
+            CommandLookup[0x8E] = (d1, d2) => new STX(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x84] = (d1, d2) => new STY(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x94] = (d1, d2) => new STY(AddressingMode.ZeroPageX, d1, 0);
+            CommandLookup[0x8C] = (d1, d2) => new STY(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xAA] = (d1, d2) => new TAX();
+            CommandLookup[0xA8] = (d1, d2) => new TAY();
+            CommandLookup[0xBA] = (d1, d2) => new TSX();
+            CommandLookup[0x8A] = (d1, d2) => new TXA();
+            CommandLookup[0x9A] = (d1, d2) => new TXS();
+            CommandLookup[0x98] = (d1, d2) => new TYA();
+
+            // Unofficial opcodes
+            CommandLookup[0xA3] = (d1, d2) => new LAX(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0xA7] = (d1, d2) => new LAX(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0xAF] = (d1, d2) => new LAX(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0xB3] = (d1, d2) => new LAX(AddressingMode.IndirectY, d1, 0);
+            CommandLookup[0xB7] = (d1, d2) => new LAX(AddressingMode.ZeroPageY, d1, 0);
+            CommandLookup[0xBF] = (d1, d2) => new LAX(AddressingMode.AbsoluteY, d1, d2);
+            CommandLookup[0x04] = (d1, d2) => new NOP(AddressingMode.ZeroPage, d1);
+            CommandLookup[0x44] = (d1, d2) => new NOP(AddressingMode.ZeroPage, d1);
+            CommandLookup[0x64] = (d1, d2) => new NOP(AddressingMode.ZeroPage, d1);
+            CommandLookup[0x0C] = (d1, d2) => new NOP(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x14] = (d1, d2) => new NOP(AddressingMode.ZeroPageX, d1);
+            CommandLookup[0x34] = (d1, d2) => new NOP(AddressingMode.ZeroPageX, d1);
+            CommandLookup[0x54] = (d1, d2) => new NOP(AddressingMode.ZeroPageX, d1);
+            CommandLookup[0x74] = (d1, d2) => new NOP(AddressingMode.ZeroPageX, d1);
+            CommandLookup[0xD4] = (d1, d2) => new NOP(AddressingMode.ZeroPageX, d1);
+            CommandLookup[0xF4] = (d1, d2) => new NOP(AddressingMode.ZeroPageX, d1);
+            CommandLookup[0x1A] = (d1, d2) => new NOP();
+            CommandLookup[0x3A] = (d1, d2) => new NOP();
+            CommandLookup[0x5A] = (d1, d2) => new NOP();
+            CommandLookup[0x7A] = (d1, d2) => new NOP();
+            CommandLookup[0xDA] = (d1, d2) => new NOP();
+            CommandLookup[0xFA] = (d1, d2) => new NOP();
+            CommandLookup[0x80] = (d1, d2) => new NOP(AddressingMode.Immediate, d1);
+            CommandLookup[0x1C] = (d1, d2) => new NOP(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x3C] = (d1, d2) => new NOP(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x5C] = (d1, d2) => new NOP(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x7C] = (d1, d2) => new NOP(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0xDC] = (d1, d2) => new NOP(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0xFC] = (d1, d2) => new NOP(AddressingMode.AbsoluteX, d1, d2);
+            CommandLookup[0x83] = (d1, d2) => new SAX(AddressingMode.IndirectX, d1, 0);
+            CommandLookup[0x87] = (d1, d2) => new SAX(AddressingMode.ZeroPage, d1, 0);
+            CommandLookup[0x8F] = (d1, d2) => new SAX(AddressingMode.Absolute, d1, d2);
+            CommandLookup[0x97] = (d1, d2) => new SAX(AddressingMode.ZeroPageY, d1, 0);
+            CommandLookup[0xEB] = (d1, d2) => new SBC(AddressingMode.Immediate, d1, 0);
+        }
+
+        public Command CreateCommand(byte opcode, byte d1, byte d2)
+        {
+            return CommandLookup[opcode]?.Invoke(d1, d2) ?? throw new NotImplementedException();
         }
     }
 }

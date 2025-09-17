@@ -85,24 +85,12 @@ namespace SharpNES
             var flags = registers.F;
 
             // Basic scroll values
-            XScroll.Text = flags.HorizontalScroll.ToString();
+            /*XScroll.Text = flags.HorizontalScroll.ToString();
             YScroll.Text = flags.VerticalScroll.ToString();
-            PPUAddrText.Text = $"${registers.V:X4}";
-
-            // Status Flags
-            VBlankText.Text = flags.VBlank.ToString();
-            Sprite0HitText.Text = flags.Sprite0Hit.ToString();
-            SpriteOverflowText.Text = flags.SpriteOverflow.ToString();
-            NMIEnabledText.Text = flags.NMIEnabled.ToString();
-
-            // Rendering Flags
-            ShowBackgroundText.Text = flags.ShowBackground.ToString();
-            ShowSpritesText.Text = flags.ShowSprites.ToString();
-            BGPatternText.Text = flags.BackgroundPatternTableAddress ? "$1000" : "$0000";
-            SprPatternText.Text = flags.SpritePatternTableAddress ? "$1000" : "$0000";
+            PPUAddrText.Text = $"${registers.V:X4}";*/
 
             // Update additional debug information if TextBlocks exist
-            UpdateAdditionalDebugInfo(ppu, registers, flags);
+            /*UpdateAdditionalDebugInfo(ppu, registers, flags);*/
         }
 
         private void UpdateAdditionalDebugInfo(NESPPU.PPU ppu, NESPPU.Registers registers, NESPPU.Registers.Flags flags)
@@ -213,34 +201,6 @@ namespace SharpNES
                     if (FindName("CurrentNametableText") is TextBlock currentNametableText)
                         currentNametableText.Text = "$----";
                 }
-
-                // Additional control flags
-                if (FindName("IncrementModeText") is TextBlock incrementModeText)
-                    incrementModeText.Text = flags.IncrementBy32 ? "32" : "1";
-                
-                if (FindName("SpriteSizeText") is TextBlock spriteSizeText)
-                    spriteSizeText.Text = flags.SpriteSize ? "8x16" : "8x8";
-                
-                if (FindName("GrayscaleText") is TextBlock grayscaleText)
-                    grayscaleText.Text = flags.Grayscale.ToString();
-
-                // Emphasis flags
-                if (FindName("EmphasizeRedText") is TextBlock emphasizeRedText)
-                    emphasizeRedText.Text = flags.EmphasizeRed.ToString();
-                if (FindName("EmphasizeGreenText") is TextBlock emphasizeGreenText)
-                    emphasizeGreenText.Text = flags.EmphasizeGreen.ToString();
-                if (FindName("EmphasizeBlueText") is TextBlock emphasizeBlueText)
-                    emphasizeBlueText.Text = flags.EmphasizeBlue.ToString();
-
-                // Left edge clipping
-                if (FindName("ShowBGLeftText") is TextBlock showBGLeftText)
-                    showBGLeftText.Text = flags.ShowBackgroundLeft.ToString();
-                if (FindName("ShowSprLeftText") is TextBlock showSprLeftText)
-                    showSprLeftText.Text = flags.ShowSpritesLeft.ToString();
-
-                // Mirroring type
-                if (FindName("MirroringText") is TextBlock mirroringText)
-                    mirroringText.Text = ppu.Mirroring.ToString();
             }
             catch
             {
@@ -259,7 +219,7 @@ namespace SharpNES
             // Update the WriteableBitmap with the new frame data
             try
             {
-                Dispatcher.Invoke(() =>
+                Dispatcher.BeginInvoke(() =>
                 {
                     _bitmap.WritePixels(new Int32Rect(0, 0, 256, 240), e, 256 * 4, 0);
                 });
