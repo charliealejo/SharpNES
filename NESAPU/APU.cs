@@ -21,10 +21,8 @@ namespace NESAPU
         private bool _sequencerMode; // false = 4-step, true = 5-step
         private bool _frameInterruptFlag;
 
-        // Timing
+        // Timing - these should be in CPU cycles, not APU cycles
         private int _frameCounterCycles;
-        private const float FrameCounterRate = 240f; // 240Hz for envelope/triangle linear counter
-        private const float LengthCounterRate = 120f; // 120Hz for length counter and sweep
         
         // Status register ($4015)
         private byte _status;
@@ -190,68 +188,87 @@ namespace NESAPU
             }
         }
 
-        // This should be called by the CPU at approximately 1.789773 MHz / 2 (APU cycles)
+        // This should be called by the CPU at CPU frequency (every CPU cycle)
         public void Clock()
         {
-            _frameCounterCycles++;
-
-            // Frame counter runs at ~240Hz, which is every ~3728 APU cycles
-            if (_frameCounterCycles >= 3728)
-            {
-                _frameCounterCycles = 0;
-                ClockFrameCounter();
-            }
-        }
-
-        private void ClockFrameCounter()
-        {
+            // Frame counter runs at ~240Hz from CPU clock
+            // 4-step: cycles 7457, 14913, 22371, 29829 (and 29830 for IRQ)
+            // 5-step: cycles 7457, 14913, 22371, 29829, 37281
+            
+            bool shouldClockQuarter = false;
+            bool shouldClockHalf = false;
+            
             if (_sequencerMode) // 5-step mode
             {
-                switch (_frameSequence)
+                switch (_frameCounter)
                 {
-                    case 0:
-                    case 2:
-                        ClockEnvelopes();
+                    case 7457:
+                        shouldClockQuarter = true;
                         break;
-                    case 1:
-                    case 3:
-                        ClockEnvelopes();
-                        ClockLengthCountersAndSweep();
+                    case 14913:
+                        shouldClockQuarter = true;
+                        shouldClockHalf = true;
                         break;
-                    case 4:
-                        // Do nothing
+                    case 22371:
+                        shouldClockQuarter = true;
                         break;
+                    case 29829:
+                        break; // Do nothing
+                    case 37281:
+                        shouldClockQuarter = true;
+                        shouldClockHalf = true;
+                        _frameCounter = 0; // Reset counter
+                        return;
                 }
-                
-                _frameSequence = (_frameSequence + 1) % 5;
             }
             else // 4-step mode
             {
-                switch (_frameSequence)
+                switch (_frameCounter)
                 {
-                    case 0:
-                    case 2:
-                        ClockEnvelopes();
+                    case 7457:
+                        shouldClockQuarter = true;
                         break;
-                    case 1:
-                        ClockEnvelopes();
-                        ClockLengthCountersAndSweep();
+                    case 14913:
+                        shouldClockQuarter = true;
+                        shouldClockHalf = true;
                         break;
-                    case 3:
-                        ClockEnvelopes();
-                        ClockLengthCountersAndSweep();
-                        
+                    case 22371:
+                        shouldClockQuarter = true;
+                        break;
+                    case 29829:
+                        shouldClockQuarter = true;
+                        shouldClockHalf = true;
+                        break;
+                    case 29830:
                         // Generate frame interrupt if not inhibited
                         if (!_interruptInhibit)
                         {
                             _frameInterruptFlag = true;
                             FrameInterrupt?.Invoke(this, EventArgs.Empty);
                         }
-                        break;
+                        _frameCounter = 0; // Reset counter
+                        return;
                 }
-                
-                _frameSequence = (_frameSequence + 1) % 4;
             }
+            
+            if (shouldClockQuarter)
+            {
+                ClockEnvelopes();
+            }
+            
+            if (shouldClockHalf)
+            {
+                ClockLengthCountersAndSweep();
+            }
+            
+            _frameCounter++;
+        }
+
+        private void ClockFrameCounter()
+        {
+            // This is called when writing to $4017 in 5-step mode
+            ClockEnvelopes();
+            ClockLengthCountersAndSweep();
         }
 
         private void ClockEnvelopes()
@@ -292,22 +309,35 @@ namespace NESAPU
             _noise.Read(noiseBuffer, 0, count);
             _dmc.Read(dmcBuffer, 0, count);
 
-            // Mix the channels using NES APU mixing algorithm
+            // Mix the channels using proper NES APU mixing algorithm
             for (int i = 0; i < count; i++)
             {
-                // NES APU uses a non-linear mixing algorithm
-                float pulse1Sample = pulse1Buffer[i];
-                float pulse2Sample = pulse2Buffer[i];
-                float triangleSample = triangleBuffer[i];
-                float noiseSample = noiseBuffer[i];
-                float dmcSample = dmcBuffer[i];
+                // Convert to amplitude levels (0-15 for pulse/noise, 0-15 for triangle, 0-127 for DMC)
+                float pulse1Level = Math.Abs(pulse1Buffer[i]) * 15f;
+                float pulse2Level = Math.Abs(pulse2Buffer[i]) * 15f;
+                float triangleLevel = Math.Abs(triangleBuffer[i]) * 15f;
+                float noiseLevel = Math.Abs(noiseBuffer[i]) * 15f;
+                float dmcLevel = Math.Abs(dmcBuffer[i]) * 127f;
 
-                // Mix all channels (simplified linear mixing)
-                float totalSum = pulse1Sample + pulse2Sample + triangleSample + noiseSample + dmcSample;
-                float mixedOutput = totalSum * 0.2f; // Average and reduce volume
+                // NES APU mixing formula
+                float pulseOut = 0f;
+                if (pulse1Level + pulse2Level > 0)
+                {
+                    pulseOut = 95.88f / ((8128f / (pulse1Level + pulse2Level)) + 100f);
+                }
+
+                float tndOut = 0f;
+                float tndSum = (triangleLevel / 8227f) + (noiseLevel / 12241f) + (dmcLevel / 22638f);
+                if (tndSum > 0)
+                {
+                    tndOut = 159.79f / ((1f / tndSum) + 100f);
+                }
+
+                // Final output
+                float finalOutput = pulseOut + tndOut;
                 
                 // Apply master volume and clamp
-                buffer[offset + i] = Math.Clamp(mixedOutput, -1.0f, 1.0f);
+                buffer[offset + i] = Math.Clamp(finalOutput * 0.5f, -1.0f, 1.0f);
             }
             
             return count;

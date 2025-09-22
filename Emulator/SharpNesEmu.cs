@@ -51,6 +51,9 @@ namespace Emulator
             var memoryBus = new MemoryBus(CPU, PPU, APU);
             memoryBus.Initialize();
             
+            // Set up DMC memory reader
+            APU.SetDmcMemoryReader(address => CPU.Memory[address]);
+            
             // Initialize audio playback
             InitializeAudio();
         }
@@ -123,6 +126,7 @@ namespace Emulator
                         WriteLog();
                     }
                     CPU.Clock();
+                    // APU is clocked at CPU frequency
                     APU.Clock();
                 }
                 PPU.Clock();

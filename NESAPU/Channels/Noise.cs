@@ -131,7 +131,7 @@ namespace NESAPU.Channels
                 _timer -= (int)apuCyclesPerSample;
                 if (_timer <= 0)
                 {
-                    _timer += _timerPeriod;
+                    _timer += _timerPeriod * 2; // Noise timer is clocked every 2 APU cycles
                     ClockShiftRegister();
                 }
 
@@ -145,8 +145,8 @@ namespace NESAPU.Channels
                     int volume = ((_envelopeControl & 0x10) != 0) ?
                                  (_envelopeControl & 0x0F) : _envelopeVolume;
 
-                    // Convert to audio range
-                    sample = (volume / 15.0f) * 0.5f; // Reduce volume for mixing
+                    // Convert to audio range (0.0 to 1.0)
+                    sample = volume / 15.0f;
                 }
 
                 buffer[offset + i] = sample;

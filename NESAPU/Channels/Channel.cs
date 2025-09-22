@@ -135,11 +135,13 @@ namespace NESAPU.Channels
 
         /// <summary>
         /// Calculates APU cycles per sample for timing calculations.
+        /// NES APU runs at CPU frequency / 2, which is ~894,886.5 Hz
         /// </summary>
         /// <returns>Number of APU cycles per audio sample</returns>
         protected float GetApuCyclesPerSample()
         {
-            return 1789773f / (2f * _sampleRate); // APU = CPU/2
+            // CPU frequency is ~1.789773 MHz, APU is CPU/2
+            return 1789773f / _sampleRate;
         }
 
         /// <summary>

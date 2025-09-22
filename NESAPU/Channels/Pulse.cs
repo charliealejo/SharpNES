@@ -144,7 +144,9 @@ namespace NESAPU.Channels
                     if (_timerPeriod >= 8 && _targetPeriod <= 0x7FF)
                     {
                         _timerPeriod = _targetPeriod;
-                        UpdateTimerPeriod();
+                        _timerLow = (byte)(_timerPeriod & 0xFF);
+                        _lengthTimerHigh = (byte)((_lengthTimerHigh & 0xF8) | ((_timerPeriod >> 8) & 0x07));
+                        CalculateTargetPeriod(); // Recalculate after update
                     }
                 }
             }
@@ -152,20 +154,34 @@ namespace NESAPU.Channels
             {
                 _sweepCounter--;
             }
+            else
+            {
+                if ((_sweepControl & 0x80) != 0 && (_sweepControl & 0x07) != 0) // Enabled and shift > 0
+                {
+                    if (_timerPeriod >= 8 && _targetPeriod <= 0x7FF)
+                    {
+                        _timerPeriod = _targetPeriod;
+                        _timerLow = (byte)(_timerPeriod & 0xFF);
+                        _lengthTimerHigh = (byte)((_lengthTimerHigh & 0xF8) | ((_timerPeriod >> 8) & 0x07));
+                        CalculateTargetPeriod(); // Recalculate after update
+                    }
+                }
+                _sweepCounter = (_sweepControl >> 4) & 0x07;
+            }
         }
 
         public override int Read(float[] buffer, int offset, int count)
         {
             for (int i = 0; i < count; i++)
             {
-                // Convert sample rate to APU frequency (approximately 1.789773 MHz)
+                // Convert sample rate to APU frequency (approximately 1.789773 MHz / 2)
                 float apuCyclesPerSample = GetApuCyclesPerSample();
 
                 // Timer clocking
                 _timer -= (int)apuCyclesPerSample;
                 if (_timer <= 0)
                 {
-                    _timer += _timerPeriod + 1;
+                    _timer += (_timerPeriod + 1) * 2; // Pulse timer is clocked every 2 APU cycles
                     _dutyCounter = (_dutyCounter + 1) % 8;
                 }
 
@@ -173,8 +189,7 @@ namespace NESAPU.Channels
                 float sample = 0f;
 
                 // Generate sound only if the channel is active
-                if (_lengthCounter > 0 && _timerPeriod >= 8 && _timerPeriod <= 0x7FF && 
-                    (_targetPeriod <= 0x7FF || (_sweepControl & 0x80) == 0))
+                if (_lengthCounter > 0 && _timerPeriod >= 8 && _targetPeriod <= 0x7FF)
                 {
                     // Get duty cycle pattern
                     int dutySelect = (_dutyControl >> 6) & 0x03;
@@ -186,8 +201,8 @@ namespace NESAPU.Channels
                         int volume = ((_dutyControl & 0x10) != 0) ?
                                      (_dutyControl & 0x0F) : _envelopeVolume;
 
-                        // Convert to float audio range (-1.0 to 1.0)
-                        sample = (volume / 15f) * 0.5f; // Reduce volume for mixing
+                        // Convert to float audio range (0.0 to 1.0) 
+                        sample = volume / 15f;
                     }
                 }
 
