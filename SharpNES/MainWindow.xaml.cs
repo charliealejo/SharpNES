@@ -22,6 +22,7 @@ namespace SharpNES
 
         private PatternTableViewer _patternTableViewer;
         private NametablesViewer _nametablesViewer;
+        private SoundDebugger _soundDebugger;
 
         public MainWindow()
         {
@@ -65,6 +66,8 @@ namespace SharpNES
             // Initialize debug windows
             _patternTableViewer = new PatternTableViewer(_emulator);
             _nametablesViewer = new NametablesViewer(_emulator);
+            _soundDebugger = new SoundDebugger(_emulator);
+
             // Initialize menu state
             UpdateMenuState();
         }
@@ -127,6 +130,7 @@ namespace SharpNES
                 // Recreate debug windows with the new emulator instance
                 _patternTableViewer = new PatternTableViewer(_emulator);
                 _nametablesViewer = new NametablesViewer(_emulator);
+                _soundDebugger = new SoundDebugger(_emulator);
 
                 // Reset pause state
                 _isPaused = false;
@@ -218,6 +222,11 @@ namespace SharpNES
             _nametablesViewer?.Show();
         }
 
+        private void SoundDebuggerButton_Click(object sender, RoutedEventArgs e)
+        {
+            _soundDebugger?.Show();
+        }
+
         private void MainWindow_KeyDown(object sender, KeyEventArgs e)
         {
             // Handle function keys for debug controls
@@ -281,6 +290,15 @@ namespace SharpNES
             try
             {
                 _nametablesViewer?.Close();
+            }
+            catch (InvalidOperationException)
+            {
+                // Window might already be closed
+            }
+
+            try
+            {
+                _soundDebugger?.Close();
             }
             catch (InvalidOperationException)
             {

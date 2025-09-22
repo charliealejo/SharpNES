@@ -2,10 +2,8 @@
 
 namespace NESAPU.Channels
 {
-    public class Noise : ISampleProvider
+    public class Noise : Channel
     {
-        private readonly float _sampleRate;
-
         // Noise channel registers
         private byte _envelopeControl;  // $400C - --LC VVVV (Length halt, Constant volume, Volume/Envelope)
         private byte _unused;           // $400D - Unused
@@ -13,12 +11,6 @@ namespace NESAPU.Channels
         private byte _lengthLoad;       // $400F - LLLL L--- (Length counter load)
 
         // Internal state
-        private int _timer;
-        private int _timerPeriod;
-        private int _lengthCounter;
-        private int _envelopeCounter;
-        private int _envelopeVolume;
-        private bool _envelopeStart;
         private ushort _shiftRegister;  // 15-bit Linear Feedback Shift Register
         private bool _modeFlag;         // false = 15-bit mode, true = 6-bit mode
 
@@ -28,27 +20,13 @@ namespace NESAPU.Channels
             4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
         ];
 
-        // Same length table as other channels
-        private static readonly byte[] LengthTable =
-        [
-            10, 254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14,
-            12,  16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
-        ];
-
-        public WaveFormat WaveFormat { get; }
-
-        public Noise(float sampleRate = 44100f)
+        public Noise(float sampleRate = 44100f) : base(sampleRate)
         {
-            _sampleRate = sampleRate;
-            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat((int)sampleRate, 1);
-
             // Initialize state
-            _lengthCounter = 0;
-            _envelopeVolume = 15;
             _shiftRegister = 1; // Start with non-zero value
         }
 
-        public void WriteRegister(int register, byte value)
+        public override void WriteRegister(int register, byte value)
         {
             switch (register & 3)
             {
@@ -73,7 +51,7 @@ namespace NESAPU.Channels
 
                     // Load length counter
                     int lengthIndex = (value >> 3) & 0x1F;
-                    _lengthCounter = LengthTable[lengthIndex];
+                    _lengthCounter = GetLengthValue(lengthIndex);
 
                     // Restart envelope
                     _envelopeStart = true;
@@ -82,33 +60,9 @@ namespace NESAPU.Channels
         }
 
         /// <summary>
-        /// Sets the length counter to the specified value. Used by APU when channel is enabled/disabled.
-        /// </summary>
-        public void SetLengthCounter(int value)
-        {
-            _lengthCounter = value;
-        }
-
-        /// <summary>
-        /// Gets the current length counter value.
-        /// </summary>
-        public int GetLengthCounter()
-        {
-            return _lengthCounter;
-        }
-
-        /// <summary>
-        /// Checks if the channel is currently active.
-        /// </summary>
-        public bool IsActive()
-        {
-            return _lengthCounter > 0;
-        }
-
-        /// <summary>
         /// Resets the channel to its initial state.
         /// </summary>
-        public void Reset()
+        public override void Reset()
         {
             _lengthCounter = 0;
             _envelopeVolume = 15;
@@ -127,38 +81,17 @@ namespace NESAPU.Channels
         }
 
         /// <summary>
-        /// Clock the envelope (called at 240Hz).
+        /// Clock the envelope (called at 240Hz) - now uses base class functionality.
         /// </summary>
         public void ClockEnvelope()
         {
-            if (_envelopeStart)
-            {
-                _envelopeStart = false;
-                _envelopeVolume = 15;
-                _envelopeCounter = _envelopeControl & 0x0F;
-            }
-            else if (_envelopeCounter > 0)
-            {
-                _envelopeCounter--;
-            }
-            else
-            {
-                _envelopeCounter = _envelopeControl & 0x0F;
-                if (_envelopeVolume > 0)
-                {
-                    _envelopeVolume--;
-                }
-                else if ((_envelopeControl & 0x20) != 0) // Length halt/Envelope loop
-                {
-                    _envelopeVolume = 15;
-                }
-            }
+            ClockEnvelope(_envelopeControl);
         }
 
         /// <summary>
         /// Clock the length counter (called at 120Hz).
         /// </summary>
-        public void ClockLength()
+        public override void ClockLength()
         {
             if ((_envelopeControl & 0x20) == 0 && _lengthCounter > 0) // Length halt flag
             {
@@ -187,12 +120,12 @@ namespace NESAPU.Channels
             _shiftRegister |= (ushort)(feedbackBit << 14);
         }
 
-        public int Read(float[] buffer, int offset, int count)
+        public override int Read(float[] buffer, int offset, int count)
         {
             for (int i = 0; i < count; i++)
             {
                 // Convert sample rate to APU frequency
-                float apuCyclesPerSample = 1789773f / (2f * _sampleRate); // APU = CPU/2
+                float apuCyclesPerSample = GetApuCyclesPerSample();
 
                 // Timer clocking
                 _timer -= (int)apuCyclesPerSample;

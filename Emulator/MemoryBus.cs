@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-using InputDevices;
 using NESAPU;
 using Ricoh6502;
 

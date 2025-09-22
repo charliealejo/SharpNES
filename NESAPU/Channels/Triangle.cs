@@ -2,10 +2,8 @@
 
 namespace NESAPU.Channels
 {
-    public class Triangle : ISampleProvider
+    public class Triangle : Channel
     {
-        private readonly float _sampleRate;
-
         // Triangle channel registers
         private byte _linearControl;    // $4008 - CRRR RRRR (Control, Reload)
         private byte _unused;           // $4009 - Unused
@@ -13,10 +11,7 @@ namespace NESAPU.Channels
         private byte _lengthTimerHigh;  // $400B - LLLL LTTT (Length load, Timer high)
 
         // Internal state
-        private int _timer;
-        private int _timerPeriod;
         private int _sequenceCounter;   // 0-31 for triangle wave sequence
-        private int _lengthCounter;
         private int _linearCounter;
         private int _linearCounterReload;
         private bool _linearCounterReloadFlag;
@@ -30,20 +25,14 @@ namespace NESAPU.Channels
             0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
         ];
 
-        public WaveFormat WaveFormat { get; }
-
-        public Triangle(float sampleRate = 44100f)
+        public Triangle(float sampleRate = 44100f) : base(sampleRate)
         {
-            _sampleRate = sampleRate;
-            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat((int)sampleRate, 1);
-
             // Initialize state
-            _lengthCounter = 0;
             _linearCounter = 0;
             _sequenceCounter = 0;
         }
 
-        public void WriteRegister(int register, byte value)
+        public override void WriteRegister(int register, byte value)
         {
             switch (register & 3)
             {
@@ -80,46 +69,10 @@ namespace NESAPU.Channels
             _timerPeriod = _timerLow | ((_lengthTimerHigh & 0x07) << 8);
         }
 
-        // Same length table as pulse channels
-        private static readonly byte[] LengthTable =
-        [
-            10, 254, 20,  2, 40,  4, 80,  6, 160,  8, 60, 10, 14, 12, 26, 14,
-            12,  16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
-        ];
-
-        private static int GetLengthValue(int index)
-        {
-            return LengthTable[index];
-        }
-
-        /// <summary>
-        /// Sets the length counter to the specified value. Used by APU when channel is enabled/disabled.
-        /// </summary>
-        public void SetLengthCounter(int value)
-        {
-            _lengthCounter = value;
-        }
-
-        /// <summary>
-        /// Gets the current length counter value.
-        /// </summary>
-        public int GetLengthCounter()
-        {
-            return _lengthCounter;
-        }
-
-        /// <summary>
-        /// Checks if the channel is currently active.
-        /// </summary>
-        public bool IsActive()
-        {
-            return _lengthCounter > 0;
-        }
-
         /// <summary>
         /// Resets the channel to its initial state.
         /// </summary>
-        public void Reset()
+        public override void Reset()
         {
             _lengthCounter = 0;
             _linearCounter = 0;
@@ -161,7 +114,7 @@ namespace NESAPU.Channels
         /// <summary>
         /// Clock the length counter (called at 120Hz).
         /// </summary>
-        public void ClockLength()
+        public override void ClockLength()
         {
             // Length counter is clocked if control flag is clear and length > 0
             if ((_linearControl & 0x80) == 0 && _lengthCounter > 0) // Control flag also acts as length halt
@@ -170,12 +123,12 @@ namespace NESAPU.Channels
             }
         }
 
-        public int Read(float[] buffer, int offset, int count)
+        public override int Read(float[] buffer, int offset, int count)
         {
             for (int i = 0; i < count; i++)
             {
                 // Convert sample rate to APU frequency
-                float apuCyclesPerSample = 1789773f / (32f * _sampleRate); // APU = CPU/2
+                float apuCyclesPerSample = GetApuCyclesPerSample() / 16f; // Triangle runs at different rate
 
                 // Timer clocking
                 _timer -= (int)apuCyclesPerSample;

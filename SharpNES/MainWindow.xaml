@@ -28,6 +28,7 @@
                 <Separator/>
                 <MenuItem Header="Pattern _Table Viewer" Click="PatternTableViewerButton_Click"/>
                 <MenuItem Header="_Nametables Viewer" Click="NametablesViewerButton_Click"/>
+                <MenuItem Header="Sound _debugger" Click="SoundDebuggerButton_Click"/>
             </MenuItem>
         </Menu>
 

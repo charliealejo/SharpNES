@@ -2,10 +2,8 @@
 
 namespace NESAPU.Channels
 {
-    public class DMC : ISampleProvider
+    public class DMC : Channel
     {
-        private readonly float _sampleRate;
-
         // DMC channel registers
         private byte _control;          // $4010 - IL-- RRRR (IRQ enable, Loop, Rate)
         private byte _directLoad;       // $4011 - -DDD DDDD (Direct load)
@@ -13,8 +11,6 @@ namespace NESAPU.Channels
         private byte _sampleLength;     // $4013 - LLLL LLLL (Sample length)
 
         // Internal state
-        private int _timer;
-        private int _timerPeriod;
         private byte _outputLevel;      // 7-bit output level (0-127)
         private bool _silenceFlag;
         private int _shifterRegister;   // 8-bit shift register
@@ -38,13 +34,8 @@ namespace NESAPU.Channels
         // Event for DMC interrupts
         public event EventHandler? DmcInterrupt;
 
-        public WaveFormat WaveFormat { get; }
-
-        public DMC(float sampleRate = 44100f)
+        public DMC(float sampleRate = 44100f) : base(sampleRate)
         {
-            _sampleRate = sampleRate;
-            WaveFormat = WaveFormat.CreateIeeeFloatWaveFormat((int)sampleRate, 1);
-
             // Initialize state
             _outputLevel = 0;
             _silenceFlag = true;
@@ -53,7 +44,7 @@ namespace NESAPU.Channels
             _sampleBufferEmpty = true;
         }
 
-        public void WriteRegister(int register, byte value)
+        public override void WriteRegister(int register, byte value)
         {
             switch (register & 3)
             {
@@ -115,7 +106,7 @@ namespace NESAPU.Channels
         /// <summary>
         /// Checks if the DMC channel is currently active.
         /// </summary>
-        public bool IsActive()
+        public override bool IsActive()
         {
             return _bytesRemaining > 0;
         }
@@ -139,7 +130,7 @@ namespace NESAPU.Channels
         /// <summary>
         /// Resets the channel to its initial state.
         /// </summary>
-        public void Reset()
+        public override void Reset()
         {
             _control = 0;
             _directLoad = 0;
@@ -245,12 +236,12 @@ namespace NESAPU.Channels
             }
         }
 
-        public int Read(float[] buffer, int offset, int count)
+        public override int Read(float[] buffer, int offset, int count)
         {
             for (int i = 0; i < count; i++)
             {
                 // Convert sample rate to APU frequency
-                float apuCyclesPerSample = 1789773f / (2f * _sampleRate); // APU = CPU/2
+                float apuCyclesPerSample = GetApuCyclesPerSample();
 
                 // Timer clocking
                 _timer -= (int)apuCyclesPerSample;
